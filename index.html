@@ -189,7 +189,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     <h2 id="loginTitle">เข้าสู่ระบบเพื่อจองห้อง</h2>
     <p id="loginStatus" role="status" aria-live="polite">กำลังตรวจสอบบัญชีของคุณ…</p>
     <form id="loginForm" class="grid" style="display:flex;flex-direction:column;gap:10px" hidden>
-      <h3 id="lg-modeTitle" hidden style="margin:0">สมัครใช้งาน</h3>
       <div id="lg-extra" hidden style="display:flex;flex-direction:column;gap:10px">
         <label>ชื่อ-นามสกุล<input id="lg-name" type="text" autocomplete="name" maxlength="120"></label>
         <label>หน่วยงาน<select id="lg-unit"></select></label>
@@ -879,7 +878,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   var signupMode = false;
   function setMode(on){
     signupMode = on; loginSay('');
-    $('#lg-extra').hidden = !on; $('#lg-modeTitle').hidden = !on; $('#backLogin').hidden = !on;
+    $('#lg-extra').hidden = !on; $('#backLogin').hidden = !on;
     $('#doLogin').hidden = on;
     $('#doSignup').textContent = on ? 'ยืนยันการสมัคร' : 'สมัครใช้งาน';
     $('#loginTitle').textContent = on ? 'สมัครใช้งานระบบจองห้อง' : 'เข้าสู่ระบบเพื่อจองห้อง';
