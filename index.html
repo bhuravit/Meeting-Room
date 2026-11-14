@@ -257,7 +257,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 
   <!-- ===== admin page ===== -->
   <div class="admin" id="viewAdmin" hidden>
-    <section class="card stack" aria-labelledby="usrTitle">
+    <div class="tabs" id="adminTabs" role="tablist" aria-label="เมนูผู้ดูแล">
+      <button class="tab" type="button" role="tab" id="atUsers" aria-selected="true" aria-controls="secUsers">เพิ่มผู้ใช้งาน<small>เพิ่ม ลบ ตั้งสิทธิ์ผู้ดูแล</small></button>
+      <button class="tab" type="button" role="tab" id="atVenues" aria-selected="false" aria-controls="secVenues">เพิ่มอาคารห้องประชุม<small>เพิ่ม แก้ไข ลบ อาคารและห้อง</small></button>
+    </div>
+    <section class="card stack" id="secUsers" role="tabpanel" aria-labelledby="atUsers">
       <div class="card-head"><h2 id="usrTitle">ผู้ใช้งาน <span class="mono" id="uCount"></span></h2></div>
       <p class="sub">ผู้ที่สมัครเข้าระบบจะแสดงที่นี่ ผู้ดูแลเพิ่มผู้ใช้ใหม่ ตั้งสิทธิ์ผู้ดูแล หรือลบผู้ใช้ได้ รายการจองเดิมของผู้ที่ถูกลบจะยังอยู่ในตาราง</p>
       <form id="uForm" class="stack" style="gap:10px">
@@ -273,7 +277,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       <ul class="list" id="uList"></ul>
     </section>
 
-    <section class="card stack" aria-labelledby="cfgTitle">
+    <section class="card stack" id="secVenues" role="tabpanel" aria-labelledby="atVenues" hidden>
       <div class="card-head">
         <h2 id="cfgTitle">อาคารและห้องประชุม</h2>
         <div class="acts">
@@ -849,6 +853,14 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     btn.disabled = false;
   });
 
+  function setAdminTab(name){
+    var u = name !== 'venues';
+    $('#secUsers').hidden = !u; $('#secVenues').hidden = u;
+    $('#atUsers').setAttribute('aria-selected', u ? 'true' : 'false'); $('#atVenues').setAttribute('aria-selected', u ? 'false' : 'true');
+  }
+  $('#atUsers').addEventListener('click', function(){ setAdminTab('users'); });
+  $('#atVenues').addEventListener('click', function(){ setAdminTab('venues'); });
+
   /* ---------- page shell ---------- */
   function renderBanner(){
     var b = $('#banner'), msg = '';
@@ -927,6 +939,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 
   initForm();
   all = [];
+  $('#u-unit').innerHTML = '<option value="">เลือกหน่วยงาน</option>' + $('#f-unit').innerHTML.replace(/<option value="">[^<]*<\/option>/, '');
 
   function loginSay(t, kind){ var m = $('#loginMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
   function authErr(e){
