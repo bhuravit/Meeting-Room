@@ -854,6 +854,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   function loginSay(t, kind){ var m = $('#loginMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
   function authErr(e){
     var m = (e && e.message || '').toLowerCase();
+    if(e && (e.status === 429 || m.indexOf('rate limit') >= 0)) return 'ส่งคำขอบ่อยเกินไปหรืออีเมลยืนยันเกินโควต้า กรุณารอสักครู่แล้วลองใหม่ (อย่ากดซ้ำ)';
     if(m.indexOf('invalid login') >= 0) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
     if(m.indexOf('not confirmed') >= 0) return 'ยังไม่ได้ยืนยันอีเมล กรุณาตรวจสอบกล่องจดหมาย';
     if(m.indexOf('already') >= 0) return 'อีเมลนี้สมัครไว้แล้ว ให้เข้าสู่ระบบแทน';
