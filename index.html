@@ -53,6 +53,8 @@ a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
 .btn.ok{border-color:var(--ok);color:var(--ok)}
 .btn.bad{border-color:var(--err);color:var(--err)}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
+.btn.busy{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;opacity:1}
+.btn:active:not([disabled]){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-height:38px}
 textarea{resize:vertical;min-height:64px}
@@ -871,7 +873,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     if(!sb) return;
     var f = $('#loginForm'); if(!f.reportValidity()) return;
     loginSay('');
+    var sbtn = $('#doSignup'); sbtn.classList.add('busy'); sbtn.disabled = true; sbtn.textContent = 'กำลังสมัคร…';
     var r = await sb.auth.signUp({email:$('#lg-email').value.trim(), password:$('#lg-pass').value, options:{emailRedirectTo: location.origin + location.pathname}});
+    sbtn.classList.remove('busy'); sbtn.disabled = false; sbtn.textContent = 'สมัครใช้งาน';
     if(r.error) loginSay(authErr(r.error),'err');
     else if(r.data && r.data.session) loginSay('สมัครสำเร็จ','good');
     else loginSay('สมัครแล้ว กรุณายืนยันอีเมลที่ส่งไปให้ แล้วกลับมาเข้าสู่ระบบ','good');
