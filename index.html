@@ -194,7 +194,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       <div class="acts">
         <button class="btn primary" id="doLogin" type="submit">เข้าสู่ระบบ</button>
         <button class="btn" id="doSignup" type="button">สมัครใช้งาน</button>
-        <button class="btn" id="demo" type="button">ลองโหมดทดลอง</button>
       </div>
     </form>
   </section>
@@ -834,14 +833,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   window.addEventListener('hashchange', route);
 
   /* ---------- start ---------- */
-  $('#demo').addEventListener('click', function(){
-    auth = 'demo'; local = true; canEdit = true; canWrite = true; me = 'local'; all = sample();
-    $('#meImg').hidden = true; $('#meName').textContent = 'โหมดทดลอง'; $('#meRole').hidden = true; $('#exitDemo').hidden = false; $('#exitDemo').textContent = 'ออกจากโหมดทดลอง';
-    route();
-  });
   $('#exitDemo').addEventListener('click', async function(){
-    if(auth === 'in' && sb){ await sb.auth.signOut(); return; }
-    auth = 'out'; all = []; route();
+    if(sb) await sb.auth.signOut();
   });
 
   /* ---------- Supabase: connection and sign-in (public client key only; access is enforced by row-level security) ---------- */
