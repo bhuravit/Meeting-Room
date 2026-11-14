@@ -460,7 +460,17 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     fillSelect($('#f-start'), s); fillSelect($('#f-end'), e);
     $('#f-start').value = 4; $('#f-end').value = 8;
     $('#f-date').value = date;
-    try{ $('#f-name').value = localStorage.getItem('smc-name') || ''; setUnit(localStorage.getItem('smc-unit') || ''); }catch(x){}
+    try{ localStorage.removeItem('smc-name'); localStorage.removeItem('smc-unit'); }catch(x){}
+  }
+  /* wipe everything typed in the booking form so the next person starts clean */
+  function resetForm(){
+    ['f-title','f-note','f-count','f-on-text','f-name'].forEach(function(id){ $('#'+id).value = ''; });
+    setUnit('');
+    ['f-cm','f-ca','f-lunch'].forEach(function(n){ document.querySelector('input[name='+n+'][value="0"]').checked = true; });
+    Array.prototype.forEach.call(document.querySelectorAll('input[name=f-eq]'), function(c){ c.checked = false; });
+    $('#f-on-wrap').hidden = true;
+    $('#f-start').value = 4; $('#f-end').value = 8; $('#f-date').value = date;
+    say('');
   }
 
   var radio = function(n){ var c = document.querySelector('input[name='+n+']:checked'); return !!c && c.value === '1'; };
@@ -502,11 +512,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var r = await addBooking(b);
       if(r.error){ say(r.error,'err'); }
       else{
-        try{ localStorage.setItem('smc-name', b.name); localStorage.setItem('smc-unit', b.unit); }catch(x){}
-        $('#f-title').value=''; $('#f-note').value=''; $('#f-count').value=''; $('#f-on-text').value='';
-        ['f-cm','f-ca','f-lunch'].forEach(function(n){ document.querySelector('input[name='+n+'][value="0"]').checked = true; });
-        Array.prototype.forEach.call(document.querySelectorAll('input[name=f-eq]'), function(c){ c.checked = false; });
-        $('#f-on-wrap').hidden = true;
+        resetForm();
         say('ส่งคำขอแล้ว สถานะ: รอการอนุมัติ','good');
         date = b.date; curB = b.building; render();
       }
@@ -877,14 +883,14 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     try{
       if(!session){
         if(channel){ sb.removeChannel(channel); channel = null; }
-        if(auth === 'in' || auth === 'checking'){ auth = 'out'; local = true; all = []; rawB = []; dec = {}; canEdit = false; route(); }
+        if(auth === 'in' || auth === 'checking'){ resetForm(); auth = 'out'; local = true; all = []; rawB = []; dec = {}; canEdit = false; route(); }
         return;
       }
       if(auth === 'in' && me === session.user.id) return;
       me = session.user.id;
       var ad = await sb.rpc('is_admin');
       canEdit = ad.data === true; canWrite = true; local = false;
-      auth = 'in'; all = []; rawB = []; dec = {}; loaded = false; loadErr = '';
+      resetForm(); auth = 'in'; all = []; rawB = []; dec = {}; loaded = false; loadErr = '';
       showMe({name: (session.user.email || '').split('@')[0]});
       resetDraft(); route();
       await loadAll();
