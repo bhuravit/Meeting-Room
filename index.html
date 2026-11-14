@@ -792,7 +792,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
   function renderLogin(){
     var chk = auth === 'checking';
-    $('#eyebrow').textContent = 'Smart Classroom · ห้องประชุม';
+    $('#eyebrow').textContent = '';
     $('#loginStatus').hidden = !chk; $('#loginStatus').textContent = 'กำลังตรวจสอบบัญชีของคุณ…';
     $('#loginForm').hidden = chk;
   }
