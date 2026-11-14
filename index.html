@@ -186,15 +186,17 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   <section class="card login" id="viewLogin" aria-labelledby="loginTitle">
     <h2 id="loginTitle">เข้าสู่ระบบเพื่อจองห้อง</h2>
     <p id="loginStatus" role="status" aria-live="polite">กำลังตรวจสอบบัญชีของคุณ…</p>
-    <div id="loginHelp" hidden style="display:flex;flex-direction:column;gap:10px">
-      <p class="sub">ระบบนี้ยืนยันตัวตนด้วยบัญชี Claude ที่ได้รับสิทธิ์ใช้งาน ไม่มีการกรอกหรือเก็บรหัสผ่านในหน้านี้ เมื่อเข้าสู่ระบบแล้วให้กด "ตรวจสอบอีกครั้ง"</p>
-      <p class="sub">ถ้าเข้าสู่ระบบแล้วแต่ยังเข้าไม่ได้ ให้ขอสิทธิ์จากผู้ดูแลระบบผ่านเมนูแชร์ของหน้านี้</p>
-    </div>
-    <div class="acts">
-      <a class="btn primary" id="loginLink" href="https://claude.ai/login" target="_blank" rel="noopener" hidden>เข้าสู่ระบบด้วยบัญชี Claude</a>
-      <button class="btn" id="recheck" type="button" disabled>ตรวจสอบอีกครั้ง</button>
-      <button class="btn" id="demo" type="button" disabled>ลองโหมดทดลอง</button>
-    </div>
+    <form id="loginForm" class="grid" style="display:flex;flex-direction:column;gap:10px" hidden>
+      <label>อีเมลสถาบัน<input id="lg-email" type="email" autocomplete="email" placeholder="ชื่อ@stin.ac.th" required></label>
+      <label>รหัสผ่าน<input id="lg-pass" type="password" autocomplete="current-password" minlength="8" required></label>
+      <p class="sub">สมัครใช้งานได้เฉพาะอีเมลของสถาบัน รหัสผ่านอย่างน้อย 8 ตัวอักษร หลังสมัครระบบจะส่งอีเมลยืนยัน</p>
+      <p class="msg" id="loginMsg" role="status" aria-live="polite"></p>
+      <div class="acts">
+        <button class="btn primary" id="doLogin" type="submit">เข้าสู่ระบบ</button>
+        <button class="btn" id="doSignup" type="button">สมัครใช้งาน</button>
+        <button class="btn" id="demo" type="button">ลองโหมดทดลอง</button>
+      </div>
+    </form>
   </section>
 
   <!-- ===== booking page ===== -->
@@ -286,6 +288,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
   var N = 28; /* 30-minute slots from 07:00; 28 slots end at 21:00 */
@@ -381,26 +384,53 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       return Object.assign({}, b, {status: st});
     });
   }
+  /* ---- Supabase mapping ---- */
+  var sb = null;
+  function fromRow(r){
+    return {id:r.id, building:r.building, room:r.room, roomName:r.room_name, buildingShort:r.building_short, date:r.date,
+      start:r.start_slot, end:r.end_slot, title:r.title, unit:r.unit, name:r.name, note:r.note, count:r.count,
+      coffeeAM:r.coffee_am, coffeePM:r.coffee_pm, lunch:r.lunch, equip:r.equip||[], onlineDetail:r.online_detail,
+      createdBy:r.created_by, cancelled:r.cancelled};
+  }
+  function toRow(b){
+    return {building:b.building, room:b.room, room_name:b.roomName, building_short:b.buildingShort, date:b.date,
+      start_slot:b.start, end_slot:b.end, title:b.title, unit:b.unit, name:b.name, note:b.note||null, count:b.count,
+      coffee_am:!!b.coffeeAM, coffee_pm:!!b.coffeePM, lunch:!!b.lunch, equip:b.equip, online_detail:b.onlineDetail||null};
+  }
+  async function loadAll(){
+    var rs = await Promise.all([
+      sb.from('bookings').select('*').order('date').limit(1000),
+      sb.from('decisions').select('*').limit(1000),
+      sb.from('venues_config').select('buildings').eq('id',1).maybeSingle()
+    ]);
+    if(rs[0].error || rs[1].error){ loadErr = 'อ่านข้อมูลไม่ได้ในขณะนี้'; render(); return; }
+    loadErr = '';
+    rawB = rs[0].data.map(fromRow);
+    dec = {}; rs[1].data.forEach(function(d){ dec[d.booking_id] = d; });
+    var bd = rs[2].data && rs[2].data.buildings;
+    BUILDINGS = (Array.isArray(bd) && bd.length) ? clone(bd) : clone(DEFAULT_B);
+    recompute(); onVenues();
+  }
   async function addBooking(b){
     if(local){
       if(clash(all,b).length) return {error:'ช่วงเวลานี้มีการจองแล้ว'};
       b.id = 'l'+Date.now(); b.status = 'pending'; all = all.concat([b]); return {ok:true};
     }
-    var snap = await db.collection('bookings').where('date','==',b.date).get();
-    var cur = snap.docs.map(function(d){
-      var x = Object.assign({id:d.id}, d.data()), dc = dec[d.id];
-      x.status = x.cancelled ? 'cancelled' : (dc && dc.status) || 'pending'; return x;
-    });
-    if(clash(cur,b).length) return {error:'ช่วงเวลานี้มีผู้จองแล้ว กรุณาเลือกเวลาอื่น'};
-    delete b.status;
-    await db.collection('bookings').add(b);
+    var r = await sb.from('bookings').insert(toRow(b));
+    if(r.error){
+      if(r.error.code === '23P01') return {error:'ช่วงเวลานี้มีผู้จองแล้ว กรุณาเลือกเวลาอื่น'};
+      throw r.error;
+    }
+    await loadAll();
     return {ok:true};
   }
   async function setStatus(id, status){
     if(local){ all = all.map(function(x){ return x.id===id ? Object.assign({}, x, {status:status}) : x; }); render(); return; }
     try{
-      if(canEdit) await db.doc('decisions/'+id).set({status:status, by:me, at:Date.now()});
-      else await db.doc('bookings/'+id).update({cancelled:true});
+      var r = canEdit ? await sb.from('decisions').upsert({booking_id:id, status:status, decided_by:me, decided_at:new Date().toISOString()})
+                      : await sb.from('bookings').update({cancelled:true}).eq('id',id);
+      if(r.error) throw r.error;
+      await loadAll();
     }catch(e){ say('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
   }
   function say(text, kind){ var m = view === 'admin' ? $('#aMsg') : $('#msg'); m.textContent = text; m.className = 'msg ' + (kind||''); }
@@ -738,7 +768,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#cfgSave').disabled = true;
     try{
       if(local){ BUILDINGS = clone(out); onVenues(); }
-      else await db.doc('config/venues').set({buildings:out, updatedBy:me, updatedAt:Date.now()});
+      else{ var cr = await sb.from('venues_config').upsert({id:1, buildings:out, updated_by:me, updated_at:new Date().toISOString()}); if(cr.error) throw cr.error; BUILDINGS = clone(out); onVenues(); }
       dirty = false; resetDraft(); renderCfg();
       msg.textContent = 'บันทึกแล้ว'; msg.className = 'msg good';
     }catch(e){ $('#cfgSave').disabled = false; bad('บันทึกไม่สำเร็จ เฉพาะผู้มีสิทธิ์แก้ไขเท่านั้นที่เปลี่ยนค่านี้ได้'); }
@@ -755,17 +785,16 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     b.hidden = !msg; b.textContent = msg;
   }
   function showMe(who){
-    $('#meImg').hidden = false; $('#meImg').src = who.avatarUrl;
+    $('#meImg').hidden = true;
     $('#meName').textContent = who.name || 'ผู้ใช้';
-    $('#meRole').textContent = canEdit ? 'ผู้ดูแล' : (canWrite ? 'ผู้จอง' : 'ดูอย่างเดียว');
-    $('#meRole').hidden = false; $('#exitDemo').hidden = true;
+    $('#meRole').textContent = canEdit ? 'ผู้ดูแล' : 'ผู้จอง';
+    $('#meRole').hidden = false; $('#exitDemo').hidden = false; $('#exitDemo').textContent = 'ออกจากระบบ';
   }
   function renderLogin(){
     var chk = auth === 'checking';
     $('#eyebrow').textContent = 'Smart Classroom · ห้องประชุม';
-    $('#loginStatus').textContent = chk ? 'กำลังตรวจสอบบัญชีของคุณ…' : 'ยังไม่พบการเข้าสู่ระบบที่มีสิทธิ์ใช้งานหน้านี้';
-    $('#loginHelp').hidden = chk; $('#loginLink').hidden = chk;
-    $('#recheck').disabled = chk; $('#demo').disabled = chk;
+    $('#loginStatus').hidden = !chk; $('#loginStatus').textContent = 'กำลังตรวจสอบบัญชีของคุณ…';
+    $('#loginForm').hidden = chk;
   }
   function route(){
     var gate = auth !== 'in' && auth !== 'demo';
@@ -807,50 +836,77 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   /* ---------- start ---------- */
   $('#demo').addEventListener('click', function(){
     auth = 'demo'; local = true; canEdit = true; canWrite = true; me = 'local'; all = sample();
-    $('#meImg').hidden = true; $('#meName').textContent = 'โหมดทดลอง'; $('#meRole').hidden = true; $('#exitDemo').hidden = false;
+    $('#meImg').hidden = true; $('#meName').textContent = 'โหมดทดลอง'; $('#meRole').hidden = true; $('#exitDemo').hidden = false; $('#exitDemo').textContent = 'ออกจากโหมดทดลอง';
     route();
   });
-  $('#exitDemo').addEventListener('click', function(){ auth = 'out'; all = []; route(); });
-  $('#recheck').addEventListener('click', function(){ connect(); });
+  $('#exitDemo').addEventListener('click', async function(){
+    if(auth === 'in' && sb){ await sb.auth.signOut(); return; }
+    auth = 'out'; all = []; route();
+  });
+
+  /* ---------- Supabase: connection and sign-in (public client key only; access is enforced by row-level security) ---------- */
+  var SUPABASE_URL = 'https://akbhemxjenvtcmnkboip.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_HbwX-MC88Q7Jd9LYcKSvpw_H9ehx3Nj';
 
   initForm();
   all = [];
 
+  function loginSay(t, kind){ var m = $('#loginMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
+  function authErr(e){
+    var m = (e && e.message || '').toLowerCase();
+    if(m.indexOf('invalid login') >= 0) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+    if(m.indexOf('not confirmed') >= 0) return 'ยังไม่ได้ยืนยันอีเมล กรุณาตรวจสอบกล่องจดหมาย';
+    if(m.indexOf('already') >= 0) return 'อีเมลนี้สมัครไว้แล้ว ให้เข้าสู่ระบบแทน';
+    if(m.indexOf('password') >= 0) return 'รหัสผ่านสั้นเกินไป (อย่างน้อย 8 ตัวอักษร)';
+    if(m.indexOf('database error') >= 0 || m.indexOf('สถาบัน') >= 0) return 'สมัครได้เฉพาะอีเมลของสถาบันเท่านั้น';
+    return 'ดำเนินการไม่สำเร็จ ลองใหม่อีกครั้ง';
+  }
+  $('#loginForm').addEventListener('submit', async function(ev){
+    ev.preventDefault(); if(!sb) return;
+    loginSay('');
+    var r = await sb.auth.signInWithPassword({email:$('#lg-email').value.trim(), password:$('#lg-pass').value});
+    if(r.error) loginSay(authErr(r.error),'err');
+  });
+  $('#doSignup').addEventListener('click', async function(){
+    if(!sb) return;
+    var f = $('#loginForm'); if(!f.reportValidity()) return;
+    loginSay('');
+    var r = await sb.auth.signUp({email:$('#lg-email').value.trim(), password:$('#lg-pass').value, options:{emailRedirectTo: location.origin + location.pathname}});
+    if(r.error) loginSay(authErr(r.error),'err');
+    else if(r.data && r.data.session) loginSay('สมัครสำเร็จ','good');
+    else loginSay('สมัครแล้ว กรุณายืนยันอีเมลที่ส่งไปให้ แล้วกลับมาเข้าสู่ระบบ','good');
+  });
+
+  var entering = false, channel = null;
+  async function enter(session){
+    if(entering) return; entering = true;
+    try{
+      if(!session){
+        if(channel){ sb.removeChannel(channel); channel = null; }
+        if(auth === 'in' || auth === 'checking'){ auth = 'out'; local = true; all = []; rawB = []; dec = {}; canEdit = false; route(); }
+        return;
+      }
+      if(auth === 'in' && me === session.user.id) return;
+      me = session.user.id;
+      var ad = await sb.rpc('is_admin');
+      canEdit = ad.data === true; canWrite = true; local = false;
+      auth = 'in'; all = []; rawB = []; dec = {}; loaded = false; loadErr = '';
+      showMe({name: (session.user.email || '').split('@')[0]});
+      resetDraft(); route();
+      await loadAll();
+      if(channel) sb.removeChannel(channel);
+      var t = null;
+      channel = sb.channel('mr-sync').on('postgres_changes', {event:'*', schema:'public'}, function(){ clearTimeout(t); t = setTimeout(loadAll, 250); }).subscribe();
+    } finally { entering = false; }
+  }
+
   async function connect(){
     auth = 'checking'; route();
-    try{
-      if(window.claude && window.claude.use){
-        db = await window.claude.use('db');
-        user = await window.claude.use('user');
-        var who = user ? await user.me() : null;
-        if(db && who && who.id){
-      me = who.id;
-      canEdit = await user.canEdit();
-      var w = await user.can('data.write');
-      canWrite = w !== false;
-      auth = 'in'; showMe(who);
-      local = false; all = []; rawB = []; resetDraft(); route();
-      var timer = setTimeout(function(){ if(!loaded){ loadErr = 'ยังเชื่อมต่อที่เก็บข้อมูลไม่ได้ รายการที่เห็นอาจไม่เป็นปัจจุบัน'; renderBanner(); } }, 10000);
-      var fail = function(){ clearTimeout(timer); loadErr = 'อ่านข้อมูลไม่ได้ในขณะนี้'; render(); };
-      db.doc('config/venues').onSnapshot(function(snap){
-        var d = snap.exists ? snap.data() : null;
-        BUILDINGS = (d && Array.isArray(d.buildings) && d.buildings.length) ? clone(d.buildings) : clone(DEFAULT_B);
-        onVenues();
-      }, fail);
-      db.collection('decisions').limit(1000).onSnapshot(function(snap){
-        dec = {}; snap.docs.forEach(function(d){ dec[d.id] = d.data(); });
-        recompute(); render();
-      }, fail);
-      db.collection('bookings').orderBy('date').limit(1000).onSnapshot(function(snap){
-        rawB = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-        if(!snap.metadata.fromCache){ loaded = true; loadErr = ''; clearTimeout(timer); }
-        recompute(); render();
-      }, fail);
-      return;
-        }
-      }
-    }catch(e){ /* fall through to the login page */ }
-    auth = 'out'; local = true; all = []; route();
+    if(!window.supabase){ auth = 'out'; route(); return; }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sb.auth.onAuthStateChange(function(ev, session){ setTimeout(function(){ enter(session); }, 0); });
+    var r = await sb.auth.getSession();
+    if(!r.data.session){ auth = 'out'; local = true; all = []; route(); }
   }
   connect();
 })();
