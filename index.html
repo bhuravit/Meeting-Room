@@ -235,7 +235,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           </select></label>
         <label class="full">ผู้จอง<input id="f-name" type="text" required></label>
         <label class="full">รายละเอียดการจองห้องประชุม<textarea id="f-note" placeholder="วัตถุประสงค์ รูปแบบการจัดห้อง ฯลฯ"></textarea></label>
-        <label>จำนวนผู้เข้าร่วม (คน)<input id="f-count" type="number" min="1" inputmode="numeric"></label>
+        <label>จำนวนผู้เข้าร่วม (คน)<input id="f-count" type="number" min="1" value="1" inputmode="numeric"></label>
         <span></span>
         <div class="full opt"><span class="ol">กาแฟ/ชา (เช้า)</span>
           <label><input type="radio" name="f-cm" value="0" checked>ไม่รับ</label><label><input type="radio" name="f-cm" value="1">รับ</label></div>
@@ -483,7 +483,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
   /* wipe everything typed in the booking form so the next person starts clean */
   function resetForm(){
-    ['f-title','f-note','f-count','f-on-text','f-name'].forEach(function(id){ $('#'+id).value = ''; });
+    ['f-title','f-note','f-on-text','f-name'].forEach(function(id){ $('#'+id).value = ''; });
+    $('#f-count').value = 1;
     setUnit('');
     ['f-cm','f-ca','f-lunch'].forEach(function(n){ document.querySelector('input[name='+n+'][value="0"]').checked = true; });
     Array.prototype.forEach.call(document.querySelectorAll('input[name=f-eq]'), function(c){ c.checked = false; });
