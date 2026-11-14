@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ระบบจองห้องประชุม</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Mitr:wght@500&display=swap">
+<style>
+/* Layout: booking page = day timetable beside form and day list; admin page (#admin) = request queue beside building/room editor. Crimson accent from the Red Cross; status colors are separate. */
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --ink:#17202B; --muted:#586577; --line:#D3D9E1; --hover:#E8ECF2;
+  --accent:#B3202A; --accent-ink:#FFFFFF;
+  --ok:#17684A; --ok-bg:#D9F0E5; --wait:#8A5700; --wait-bg:#FAE8C2; --off:#6B7685; --off-bg:#E4E8EE;
+  --err:#B42318;
+  --u-bg:90%; --u-bgs:65%; --u-fg:22%; --u-fgs:70%; --u-bd:42%; /* unit colors: one hue per unit, these set lightness per theme */
+  --f-body:"IBM Plex Sans Thai","Noto Sans Thai","Sarabun",system-ui,sans-serif;
+  --f-head:"Mitr","IBM Plex Sans Thai","Noto Sans Thai",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151C; --surface:#18202A; --ink:#E6EBF1; --muted:#9AA7B8; --line:#2B3644; --hover:#222C38;
+    --accent:#D6434D; --accent-ink:#FFFFFF;
+    --ok:#6AD3A4; --ok-bg:#163A2D; --wait:#F0BC55; --wait-bg:#3A2F15; --off:#9AA7B8; --off-bg:#232C37;
+    --err:#FF8A80; --u-bg:24%; --u-bgs:40%; --u-fg:88%; --u-fgs:70%; --u-bd:62%; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151C; --surface:#18202A; --ink:#E6EBF1; --muted:#9AA7B8; --line:#2B3644; --hover:#222C38;
+  --accent:#D6434D; --accent-ink:#FFFFFF;
+  --ok:#6AD3A4; --ok-bg:#163A2D; --wait:#F0BC55; --wait-bg:#3A2F15; --off:#9AA7B8; --off-bg:#232C37;
+  --err:#FF8A80; --u-bg:24%; --u-bgs:40%; --u-fg:88%; --u-fgs:70%; --u-bd:62%; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-head);font-weight:500;margin:0;text-wrap:balance}
+h1{font-size:26px;line-height:1.25}
+h2{font-size:18px}
+h3{font-size:15px}
+.eyebrow{margin:0 0 2px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
+.nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,input,select,textarea{font:inherit;color:inherit}
+a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 13px;border-radius:6px;cursor:pointer;min-height:38px}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.sm{min-height:30px;padding:3px 10px;font-size:13px}
+.btn.ok{border-color:var(--ok);color:var(--ok)}
+.btn.bad{border-color:var(--err);color:var(--err)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-height:38px}
+textarea{resize:vertical;min-height:64px}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.notice{margin:0;padding:9px 12px;border:1px dashed var(--line);border-radius:6px;background:var(--surface);font-size:13px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:20px;align-items:start}
+.admin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+@media (max-width:900px){.layout,.admin{grid-template-columns:minmax(0,1fr)}}
+.board,.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.board{display:flex;flex-direction:column;gap:12px}
+.card.stack{display:flex;flex-direction:column;gap:12px}
+.board-head,.card-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:5px;border:1px solid var(--line)}
+.sw.ok{background:var(--off-bg);border:1px solid var(--muted)}
+.sw.wait{background:repeating-linear-gradient(135deg,var(--off-bg) 0 4px,var(--surface) 4px 8px);border:1px dashed var(--muted)}
+.units{margin-top:2px}
+.scroll{overflow-x:auto}
+.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px}
+.tab{border:1px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:6px;cursor:pointer;min-height:38px;text-align:left;min-width:0;overflow-wrap:anywhere}
+.tab:hover{background:var(--hover)}
+.tab{border-left:5px solid var(--tb,var(--accent))}
+.tab[aria-selected="true"]{background:var(--tb,var(--accent));border-color:var(--tb,var(--accent));color:var(--tf,var(--accent-ink));font-weight:600}
+.tab small{display:block;font-size:11px;opacity:.85;font-weight:400}
+.tt{display:grid;grid-template-columns:58px repeat(var(--cols,3),minmax(110px,1fr));grid-template-rows:auto repeat(28,30px);border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));min-width:340px}
+.hd{grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;padding:6px 8px;font-size:13px;line-height:1.35;overflow-wrap:anywhere;font-weight:600;background:var(--off-bg);border-left:1px solid var(--line)}
+.hd small{font-weight:400;font-size:11px;color:var(--muted)}
+.hd.t{grid-column:1;border-left:0;font-size:12px;color:var(--muted)}
+.tl{grid-column:1;font-size:11px;color:var(--muted);padding:0 6px;display:flex;align-items:flex-start;justify-content:flex-end;border-top:1px dashed var(--line);font-variant-numeric:tabular-nums;line-height:1.4;padding-top:3px}
+.tl.hr{border-top:1px solid var(--line);color:var(--ink)}
+.cell{border:0;border-top:1px dashed var(--line);border-left:1px solid var(--line);background:transparent;cursor:pointer;padding:0;min-height:0}
+.cell.hr{border-top:1px solid var(--line)}
+.cell:hover{background:var(--hover)}
+.bk{z-index:1;margin:1px 2px;padding:3px 7px;overflow:hidden;font-size:12px;line-height:1.35;text-align:left;border:1px solid;border-radius:3px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
+.bk b{font-weight:600}
+.bk.hu{background:hsl(var(--h) var(--u-bgs) var(--u-bg));color:hsl(var(--h) var(--u-fgs) var(--u-fg));border-color:hsl(var(--h) 55% var(--u-bd))}
+.bk.nounit{background:var(--off-bg);color:var(--muted);border-color:var(--line)}
+.bk.pending{border-style:dashed}
+.bk.hu.pending{background:repeating-linear-gradient(135deg,hsl(var(--h) var(--u-bgs) var(--u-bg)) 0 6px,var(--surface) 6px 12px)}
+.bk.nounit.pending{background:repeating-linear-gradient(135deg,var(--off-bg) 0 6px,var(--surface) 6px 12px)}
+.item.hu{border-left:4px solid hsl(var(--h) 55% var(--u-bd))}
+.sw.u{background:hsl(var(--h) var(--u-bgs) var(--u-bg));border-color:hsl(var(--h) 55% var(--u-bd))}
+.sw.u.none{background:var(--off-bg);border-color:var(--line)}
+.bk.sel{outline:2px solid var(--accent);outline-offset:1px}
+.side{display:flex;flex-direction:column;gap:18px;min-width:0}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form .full{grid-column:1/-1}
+.form h2{grid-column:1/-1}
+.msg{grid-column:1/-1;min-height:20px;margin:0;font-size:13px}
+.msg.err{color:var(--err)}
+.msg.good{color:var(--ok)}
+.list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.item{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.item.sel{border-color:var(--accent)}
+.item.dim{opacity:.7}
+.item .row{display:flex;flex-wrap:wrap;gap:6px 10px;justify-content:space-between;align-items:baseline}
+.item p{margin:0;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(10,14,20,.5);display:flex;align-items:center;justify-content:center;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet{width:min(520px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:14px;box-shadow:0 12px 40px rgba(0,0,0,.28)}
+.dl{display:grid;grid-template-columns:minmax(90px,130px) minmax(0,1fr);gap:8px 14px;margin:0}
+.dl dt{color:var(--muted);font-size:13px}
+.dl dd{margin:0;overflow-wrap:anywhere}
+.dl dt.hl{align-self:center;color:var(--ink);font-weight:600}
+.dl dd.hl{font-weight:600;font-size:16px;line-height:1.45;padding:6px 12px;border-radius:6px;border-left:4px solid hsl(var(--h) 55% var(--u-bd));
+  background:hsl(var(--h) var(--u-bgs) var(--u-bg));color:hsl(var(--h) var(--u-fgs) var(--u-fg))}
+.item p.sum{color:var(--ink)}
+.item p b{font-weight:600}
+.item .ttl{font-weight:600;overflow-wrap:anywhere}
+.chip{font-size:12px;padding:1px 9px;border-radius:99px;border:1px solid;white-space:nowrap}
+.chip.approved{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.chip.pending{background:var(--wait-bg);color:var(--wait);border-color:var(--wait)}
+.chip.rejected,.chip.cancelled{background:var(--off-bg);color:var(--off);border-color:var(--line)}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.empty{margin:0;font-size:13px;color:var(--muted)}
+.mono{font-variant-numeric:tabular-nums}
+.bld{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.rrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.rrow .rn{flex:1 1 220px;min-width:0}
+.rrow .rs{flex:0 0 100px}
+.rrow .rw{flex:1 1 140px;min-width:0}
+.rrow .info{font-size:12px;color:var(--muted);align-self:center}
+.rooms{display:flex;flex-direction:column;gap:8px;padding-left:12px;border-left:2px solid var(--line)}
+.sub{margin:0;font-size:12px;color:var(--muted)}
+.opt{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.opt .ol{font-size:13px;color:var(--muted);flex:0 0 120px}
+.opt label{flex-direction:row;align-items:center;gap:6px;font-size:14px;color:var(--ink)}
+.opt input{width:auto;min-height:0;margin:0}
+.opt.eq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;align-items:start}
+.opt.eq .ol{grid-column:1/-1}
+.opt.eq label{align-items:flex-start;line-height:1.4}
+.opt.eq input{margin-top:3px;flex:none}
+.login{max-width:460px;width:100%;margin:24px auto;display:flex;flex-direction:column;gap:14px}
+.login p{margin:0}
+.me{display:inline-flex;gap:8px;align-items:center;padding:3px 12px 3px 4px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-size:13px;min-width:0}
+.me img{width:28px;height:28px;border-radius:50%;flex:none}
+.me span{overflow-wrap:anywhere}
+.me .chip{font-size:11px}
+@media (prefers-reduced-motion:no-preference){.btn{transition:background .12s}}
+</style>
+<style>body{margin:0}img{max-width:100%}:root{color-scheme:light}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow" id="eyebrow"></p>
+      <h1 id="pageTitle">ระบบจองห้องประชุม</h1>
+    </div>
+    <nav class="nav" aria-label="เมนู">
+      <span class="nav" id="dateNav">
+        <button class="btn" id="prev" type="button">‹ วันก่อนหน้า</button>
+        <button class="btn" id="today" type="button">วันนี้</button>
+        <button class="btn" id="next" type="button">วันถัดไป ›</button>
+        <input id="vdate" type="date" aria-label="ไปยังวันที่" style="width:auto">
+      </span>
+      <span class="me" id="meChip" hidden>
+        <img id="meImg" alt="" width="28" height="28">
+        <span id="meName"></span>
+        <span class="chip approved" id="meRole"></span>
+        <button class="btn sm" id="exitDemo" type="button" hidden>ออกจากโหมดทดลอง</button>
+      </span>
+      <a class="btn" id="goAdmin" href="#admin" hidden>หน้าผู้ดูแล</a>
+      <a class="btn" id="goMain" href="#main" hidden>‹ กลับหน้าจอง</a>
+    </nav>
+  </header>
+
+  <p class="notice" id="banner" hidden></p>
+
+  <!-- ===== login page ===== -->
+  <section class="card login" id="viewLogin" aria-labelledby="loginTitle">
+    <h2 id="loginTitle">เข้าสู่ระบบเพื่อจองห้อง</h2>
+    <p id="loginStatus" role="status" aria-live="polite">กำลังตรวจสอบบัญชีของคุณ…</p>
+    <div id="loginHelp" hidden style="display:flex;flex-direction:column;gap:10px">
+      <p class="sub">ระบบนี้ยืนยันตัวตนด้วยบัญชี Claude ที่ได้รับสิทธิ์ใช้งาน ไม่มีการกรอกหรือเก็บรหัสผ่านในหน้านี้ เมื่อเข้าสู่ระบบแล้วให้กด "ตรวจสอบอีกครั้ง"</p>
+      <p class="sub">ถ้าเข้าสู่ระบบแล้วแต่ยังเข้าไม่ได้ ให้ขอสิทธิ์จากผู้ดูแลระบบผ่านเมนูแชร์ของหน้านี้</p>
+    </div>
+    <div class="acts">
+      <a class="btn primary" id="loginLink" href="https://claude.ai/login" target="_blank" rel="noopener" hidden>เข้าสู่ระบบด้วยบัญชี Claude</a>
+      <button class="btn" id="recheck" type="button" disabled>ตรวจสอบอีกครั้ง</button>
+      <button class="btn" id="demo" type="button" disabled>ลองโหมดทดลอง</button>
+    </div>
+  </section>
+
+  <!-- ===== booking page ===== -->
+  <div class="layout" id="viewMain">
+    <section class="board" aria-labelledby="dayTitle">
+      <div class="board-head">
+        <h2 id="dayTitle"></h2>
+        <div class="legend">
+          <span><i class="sw ok"></i>อนุมัติ (กรอบทึบ)</span>
+          <span><i class="sw wait"></i>รอการอนุมัติ (กรอบประ ลายเส้น)</span>
+          <span>คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด</span>
+        </div>
+      </div>
+      <div class="tabs" id="tabs" role="tablist" aria-label="เลือกอาคาร"></div>
+      <div class="scroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
+      <div class="legend units" id="unitLegend" aria-label="สีของหน่วยงาน" hidden></div>
+      <p class="empty" id="dayEmpty" hidden>ยังไม่มีการจองในวันนี้ คลิกช่องว่างในตารางหรือกรอกแบบฟอร์มทางขวาเพื่อจองห้อง</p>
+    </section>
+
+    <aside class="side">
+      <form class="card form" id="form" novalidate>
+        <h2>จองห้อง</h2>
+        <label class="full">อาคาร<select id="f-bld"></select></label>
+        <label>ห้อง<select id="f-room"></select></label>
+        <label>วันที่<input id="f-date" type="date" required></label>
+        <label>เริ่ม<select id="f-start"></select></label>
+        <label>สิ้นสุด<select id="f-end"></select></label>
+        <label class="full">หัวข้อการจองห้องประชุม<input id="f-title" type="text" placeholder="เช่น อบรมการใช้งานสื่อการสอน" required></label>
+        <label class="full">หน่วยงาน / ฝ่าย
+          <select id="f-unit">
+            <option value="">เลือกหน่วยงาน</option>
+          </select></label>
+        <label class="full">ผู้จอง<input id="f-name" type="text" required></label>
+        <label class="full">รายละเอียดการจองห้องประชุม<textarea id="f-note" placeholder="วัตถุประสงค์ รูปแบบการจัดห้อง ฯลฯ"></textarea></label>
+        <label>จำนวนผู้เข้าร่วม (คน)<input id="f-count" type="number" min="1" inputmode="numeric"></label>
+        <span></span>
+        <div class="full opt"><span class="ol">กาแฟ/ชา (เช้า)</span>
+          <label><input type="radio" name="f-cm" value="0" checked>ไม่รับ</label><label><input type="radio" name="f-cm" value="1">รับ</label></div>
+        <div class="full opt"><span class="ol">กาแฟ/ชา (บ่าย)</span>
+          <label><input type="radio" name="f-ca" value="0" checked>ไม่รับ</label><label><input type="radio" name="f-ca" value="1">รับ</label></div>
+        <div class="full opt"><span class="ol">อาหารกลางวัน</span>
+          <label><input type="radio" name="f-lunch" value="0" checked>ไม่รับ</label><label><input type="radio" name="f-lunch" value="1">รับ</label></div>
+        <div class="full opt eq"><span class="ol">อุปกรณ์</span>
+          <label><input type="checkbox" name="f-eq" value="pc">คอมพิวเตอร์ PC</label>
+          <label><input type="checkbox" name="f-eq" value="nb">คอมพิวเตอร์ Notebook</label>
+          <label><input type="checkbox" name="f-eq" value="lcd">LCD Projector</label>
+          <label><input type="checkbox" name="f-eq" value="viz">เครื่องฉายภาพ 3 มิติ</label>
+          <label><input type="checkbox" name="f-eq" value="sound">ระบบเสียง</label>
+          <label><input type="checkbox" name="f-eq" value="online" id="f-on">Online</label></div>
+        <label class="full" id="f-on-wrap" hidden>รายละเอียดการประชุม Online<input id="f-on-text" type="text" placeholder="เช่น Zoom, Teams, ลิงก์ห้องประชุม"></label>        <p class="msg" id="msg" role="status" aria-live="polite"></p>
+        <button class="btn primary full" id="submit" type="submit">ส่งคำขอจอง</button>
+      </form>
+    </aside>
+  </div>
+
+  <!-- ===== admin page ===== -->
+  <div class="admin" id="viewAdmin" hidden>
+    <section class="card stack" aria-labelledby="reqTitle">
+      <div class="card-head"><h2 id="reqTitle">คำขอจอง</h2></div>
+      <p class="msg" id="aMsg" role="status" aria-live="polite"></p>
+      <h3>รออนุมัติ <span class="mono" id="pendCount"></span></h3>
+      <ul class="list" id="aPending"></ul>
+      <h3>อนุมัติแล้ว ตั้งแต่วันนี้เป็นต้นไป</h3>
+      <ul class="list" id="aApproved"></ul>
+    </section>
+
+    <section class="card stack" aria-labelledby="cfgTitle">
+      <div class="card-head">
+        <h2 id="cfgTitle">อาคารและห้องประชุม</h2>
+        <div class="acts">
+          <button class="btn sm" id="cfgReset" type="button" disabled>ยกเลิกการแก้ไข</button>
+          <button class="btn sm primary" id="cfgSave" type="button" disabled>บันทึกการเปลี่ยนแปลง</button>
+        </div>
+      </div>
+      <p class="sub">เปลี่ยนชื่อห้องไม่กระทบรายการจองเดิม ถ้าลบห้อง รายการจองเดิมจะยังอยู่ในรายการ แต่ไม่แสดงในตาราง</p>
+      <p class="msg" id="cfgMsg" role="status" aria-live="polite"></p>
+      <div class="side" id="cfgList"></div>
+      <button class="btn" id="addB" type="button">+ เพิ่มอาคาร</button>
+    </section>
+  </div>
+</div>
+
+<!-- ===== booking detail sheet ===== -->
+<div class="modal" id="modal" hidden>
+  <div class="sheet card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="card-head"><h2 id="mTitle"></h2><button class="btn sm" id="mClose" type="button">ปิด</button></div>
+    <dl class="dl" id="mBody"></dl>
+    <div class="acts" id="mActs"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var N = 28; /* 30-minute slots from 07:00; 28 slots end at 21:00 */
+  var ST = {pending:'รอการอนุมัติ',approved:'อนุมัติ',rejected:'ไม่อนุมัติ',cancelled:'ยกเลิก'};
+  var THD = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  var THM = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var $ = function(s){ return document.querySelector(s); };
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
+  var uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); };
+  var tl = function(i){ var m = 420 + 30*i; return pad(Math.floor(m/60)) + ':' + pad(m%60); };
+  var todayStr = function(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}); };
+  var parse = function(s){ var a = s.split('-').map(Number); return new Date(a[0],a[1]-1,a[2]); };
+  var iso = function(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+  var shift = function(s,n){ var d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+  var thDate = function(s){ var d = parse(s); return 'วัน'+THD[d.getDay()]+'ที่ '+d.getDate()+' '+THM[d.getMonth()]+' พ.ศ. '+(d.getFullYear()+543); };
+  var thShort = function(s){ var d = parse(s); return d.getDate()+' '+THM[d.getMonth()].slice(0,3)+(THM[d.getMonth()].length>6?'.':'')+' '+String(d.getFullYear()+543).slice(2); };
+  var el = function(tag,cls,text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; };
+
+  /* ---------- buildings and rooms: defaults, replaced by the saved config (config/venues) ---------- */
+  var DEFAULT_B = [
+    {id:'b1', name:'อาคารสิรินธรานุสรณ์ 60 พรรษา', short:'อาคารสิรินธรานุสรณ์', rooms:[
+      {id:'r910',name:'ห้อง 910',seats:40},{id:'r911',name:'ห้อง 911',seats:40},{id:'r912',name:'ห้อง 912',seats:40}]},
+    {id:'b2', name:'อาคารเฉลิมพระเกียรติ 6 รอบ พระชนมพรรษา', short:'อาคารเฉลิมพระเกียรติ', rooms:[
+      {id:'r802-1',name:'ห้อง 802/1',seats:14},
+      {id:'r802-4',name:'ห้องประชุม พ.อ. นพ.เยื้อง ท่านผู้หญิงประเทือง คชภักดี (802/4)',seats:40},
+      {id:'r902-3',name:'ห้องประชุมนายเจริญ คุณหญิงวรรณา สิริวัฒนภักดี (902/3)',seats:40},
+      {id:'r502',name:'ห้อง 502',seats:14}]}
+  ];
+  /* Each unit gets its own hue (0-360). Names must match the options in the booking form. */
+  var UNITS = [
+    {g:'ฝ่าย', n:'ฝ่ายการคลังและทรัพย์สิน', h:205},
+    {g:'ฝ่าย', n:'ฝ่ายวิจัยและบริการวิชาการ', h:28},
+    {g:'ฝ่าย', n:'ฝ่ายบริการการศึกษา', h:150},
+    {g:'ฝ่าย', n:'ฝ่ายบริหารงานทั่วไป', h:285},
+    {g:'ฝ่าย', n:'ฝ่ายบริหารวิชาการ', h:48},
+    {g:'ฝ่าย', n:'ฝ่ายพัฒนานักศึกษา', h:335},
+    {g:'ฝ่าย', n:'ฝ่ายยุทธศาสตร์และประกันคุณภาพการศึกษา', h:180},
+    {g:'สาขาวิชา', n:'สาขาวิชาการพยาบาลพื้นฐานและบริหารการพยาบาล', h:95},
+    {g:'สาขาวิชา', n:'สาขาวิชาการพยาบาลมารดา ทารกและการผดุงครรภ์', h:358},
+    {g:'สาขาวิชา', n:'สาขาวิชาการพยาบาลเด็ก', h:235},
+    {g:'สาขาวิชา', n:'สาขาวิชาการพยาบาลผู้ใหญ่และผู้สูงอายุ', h:70},
+    {g:'สาขาวิชา', n:'สาขาวิชาการพยาบาลอนามัยชุมชน', h:310},
+    {g:'สาขาวิชา', n:'สาขาวิชาการพยาบาลจิตเวชและสุขภาพจิต', h:262}
+  ];
+  var HUE = {}; UNITS.forEach(function(u){ HUE[u.n] = u.h; });
+  function paint(e, unit){
+    if(HUE[unit] == null) e.classList.add('nounit');
+    else { e.style.setProperty('--h', HUE[unit]); e.classList.add('hu'); }
+  }
+  var BUILDINGS = clone(DEFAULT_B);
+  /* Building colors: Sirinthorn building purple, Chaloem building yellow; any building added later cycles through EXTRA. */
+  var BCOL = {
+    b1:{bg:'hsl(280 45% 40%)', fg:'#FFFFFF'},
+    b2:{bg:'hsl(46 92% 52%)', fg:'hsl(40 80% 12%)'}
+  };
+  var EXTRA = [{bg:'hsl(185 60% 33%)', fg:'#FFFFFF'}, {bg:'hsl(15 75% 46%)', fg:'#FFFFFF'}, {bg:'hsl(215 60% 42%)', fg:'#FFFFFF'}];
+  var bcol = function(b){ return BCOL[b.id] || EXTRA[Math.max(0, BUILDINGS.indexOf(b) - 2) % EXTRA.length]; };
+  var findB = function(id){ return BUILDINGS.filter(function(b){ return b.id === id; })[0]; };
+  var bOf = function(id){ return findB(id) || BUILDINGS[0]; };
+  var roomName = function(b){
+    var bl = findB(b.building), r = bl && bl.rooms.filter(function(x){ return x.id === b.room; })[0];
+    return r ? r.name : (b.roomName || '(ห้องที่ถูกลบ)');
+  };
+  var bShort = function(b){ var bl = findB(b.building); return bl ? bl.short : (b.buildingShort || ''); };
+  var roomLabel = function(b){ return bShort(b) + ' · ' + roomName(b); };
+
+  var db = null, user = null, me = 'local', canEdit = true, canWrite = true, local = true, loaded = false, loadErr = '';
+  var rawB = [], dec = {}, all = [];
+  var date = todayStr();
+  var curB = BUILDINGS[0].id, view = 'main', auth = 'checking'; /* auth: checking | out | in | demo */
+  var selected = null, armed = null, armTimer = null;
+  var draft = null, dirty = false, cfgArm = null, cfgTimer = null;
+
+  function sample(){
+    var d = todayStr();
+    return [
+      {id:'x1',equip:['pc','sound'],building:'b1',room:'r911',date:d,start:3,end:10,title:'อบรมการใช้งานสื่อการสอน (ตัวอย่าง)',unit:'ฝ่ายบริการการศึกษา',name:'ตัวอย่าง',status:'approved',createdBy:'local'},
+      {id:'x2',equip:['lcd','online'],onlineDetail:'Zoom',building:'b2',room:'r802-1',date:d,start:12,end:18,title:'ประชุมคณะกรรมการ (ตัวอย่าง)',unit:'ฝ่ายบริหารวิชาการ',name:'ตัวอย่าง',status:'pending',createdBy:'local'}
+    ];
+  }
+
+  /* ---------- data layer ---------- */
+  function blocking(b){ return b.status === 'pending' || b.status === 'approved'; }
+  function clash(list, b){
+    return list.filter(function(x){ return blocking(x) && x.building === b.building && x.room === b.room && x.date === b.date && x.start < b.end && b.start < x.end; });
+  }
+  /* A booking's status comes from the admin-only "decisions" collection; a booking with no decision is pending. */
+  function recompute(){
+    all = rawB.map(function(b){
+      var d = dec[b.id], st = (d && d.status) ? d.status : 'pending';
+      if(b.cancelled) st = 'cancelled';
+      return Object.assign({}, b, {status: st});
+    });
+  }
+  async function addBooking(b){
+    if(local){
+      if(clash(all,b).length) return {error:'ช่วงเวลานี้มีการจองแล้ว'};
+      b.id = 'l'+Date.now(); b.status = 'pending'; all = all.concat([b]); return {ok:true};
+    }
+    var snap = await db.collection('bookings').where('date','==',b.date).get();
+    var cur = snap.docs.map(function(d){
+      var x = Object.assign({id:d.id}, d.data()), dc = dec[d.id];
+      x.status = x.cancelled ? 'cancelled' : (dc && dc.status) || 'pending'; return x;
+    });
+    if(clash(cur,b).length) return {error:'ช่วงเวลานี้มีผู้จองแล้ว กรุณาเลือกเวลาอื่น'};
+    delete b.status;
+    await db.collection('bookings').add(b);
+    return {ok:true};
+  }
+  async function setStatus(id, status){
+    if(local){ all = all.map(function(x){ return x.id===id ? Object.assign({}, x, {status:status}) : x; }); render(); return; }
+    try{
+      if(canEdit) await db.doc('decisions/'+id).set({status:status, by:me, at:Date.now()});
+      else await db.doc('bookings/'+id).update({cancelled:true});
+    }catch(e){ say('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
+  }
+  function say(text, kind){ var m = view === 'admin' ? $('#aMsg') : $('#msg'); m.textContent = text; m.className = 'msg ' + (kind||''); }
+
+  /* ---------- booking form ---------- */
+  function fillSelect(sel, items){ sel.innerHTML=''; items.forEach(function(it){ var o = el('option',null,it[1]); o.value = it[0]; sel.appendChild(o); }); }
+  function syncRooms(){
+    var sel = $('#f-room'), keep = sel.value;
+    fillSelect(sel, bOf($('#f-bld').value).rooms.map(function(r){ return [r.id, r.name]; }));
+    if(keep && Array.prototype.some.call(sel.options, function(o){ return o.value === keep; })) sel.value = keep;
+  }
+  function refreshFormVenues(){
+    var keep = $('#f-bld').value || curB;
+    fillSelect($('#f-bld'), BUILDINGS.map(function(b){ return [b.id, b.name]; }));
+    $('#f-bld').value = findB(keep) ? keep : curB;
+    syncRooms();
+  }
+  function initForm(){
+    var us = $('#f-unit'), grp = null, gl = '';
+    UNITS.forEach(function(u){
+      if(u.g !== gl){ gl = u.g; grp = document.createElement('optgroup'); grp.label = gl; us.appendChild(grp); }
+      var o = el('option',null,u.n); o.value = u.n; grp.appendChild(o);
+    });
+    refreshFormVenues();
+    var s = [], e = [];
+    for(var i=0;i<N;i++) s.push([i, tl(i)]);
+    for(var j=1;j<=N;j++) e.push([j, tl(j)]);
+    fillSelect($('#f-start'), s); fillSelect($('#f-end'), e);
+    $('#f-start').value = 4; $('#f-end').value = 8;
+    $('#f-date').value = date;
+    try{ $('#f-name').value = localStorage.getItem('smc-name') || ''; setUnit(localStorage.getItem('smc-unit') || ''); }catch(x){}
+  }
+
+  var radio = function(n){ var c = document.querySelector('input[name='+n+']:checked'); return !!c && c.value === '1'; };
+  var EQ = {pc:'คอมพิวเตอร์ PC', nb:'คอมพิวเตอร์ Notebook', lcd:'LCD Projector', viz:'เครื่องฉายภาพ 3 มิติ', sound:'ระบบเสียง'};
+  function unitValue(){ return $('#f-unit').value; }
+  function setUnit(v){
+    var sel = $('#f-unit');
+    sel.value = Array.prototype.some.call(sel.options, function(o){ return o.value === v; }) ? v : '';
+  }
+  $('#f-on').addEventListener('change', function(){ $('#f-on-wrap').hidden = !$('#f-on').checked; });
+  $('#f-bld').addEventListener('change', function(){ syncRooms(); curB = $('#f-bld').value; render(); });
+  $('#f-start').addEventListener('change', function(){
+    var s = +$('#f-start').value; if(+$('#f-end').value <= s) $('#f-end').value = Math.min(N, s+2);
+  });
+  $('#f-date').addEventListener('change', function(){ if($('#f-date').value){ date = $('#f-date').value; render(); } });
+
+  $('#form').addEventListener('submit', async function(ev){
+    ev.preventDefault(); say('');
+    var bl = bOf($('#f-bld').value), rm = bl.rooms.filter(function(r){ return r.id === $('#f-room').value; })[0];
+    var b = {
+      building: bl.id, room: $('#f-room').value, roomName: rm ? rm.name : '', buildingShort: bl.short,
+      date: $('#f-date').value, start: +$('#f-start').value, end: +$('#f-end').value,
+      title: $('#f-title').value.trim(), unit: unitValue(), name: $('#f-name').value.trim(),
+      note: $('#f-note').value.trim(), createdBy: me, createdAt: Date.now(),
+      count: parseInt($('#f-count').value,10) || null,
+      coffeeAM: radio('f-cm'), coffeePM: radio('f-ca'), lunch: radio('f-lunch'),
+      equip: Array.prototype.map.call(document.querySelectorAll('input[name=f-eq]:checked'), function(c){ return c.value; }),
+      onlineDetail: $('#f-on-text').value.trim()
+    };
+    if(b.equip.indexOf('online') < 0) b.onlineDetail = '';
+    if(!b.date) return say('กรุณาเลือกวันที่','err');
+    if(!b.room) return say('กรุณาเลือกห้อง','err');
+    if(b.end <= b.start) return say('เวลาสิ้นสุดต้องหลังเวลาเริ่ม','err');
+    if(!b.title || !b.unit || !b.name) return say('กรุณากรอกเรื่อง หน่วยงาน และชื่อผู้จอง','err');
+    if(!canWrite) return say('บัญชีนี้ดูตารางได้อย่างเดียว ไม่สามารถจองได้','err');
+    if(b.count && rm && rm.seats && b.count > rm.seats) return say('จำนวนผู้เข้าร่วมเกินที่นั่งของห้องนี้ ('+rm.seats+' ที่นั่ง)','err');
+    var btn = $('#submit'); btn.disabled = true;
+    try{
+      var r = await addBooking(b);
+      if(r.error){ say(r.error,'err'); }
+      else{
+        try{ localStorage.setItem('smc-name', b.name); localStorage.setItem('smc-unit', b.unit); }catch(x){}
+        $('#f-title').value=''; $('#f-note').value=''; $('#f-count').value=''; $('#f-on-text').value='';
+        ['f-cm','f-ca','f-lunch'].forEach(function(n){ document.querySelector('input[name='+n+'][value="0"]').checked = true; });
+        Array.prototype.forEach.call(document.querySelectorAll('input[name=f-eq]'), function(c){ c.checked = false; });
+        $('#f-on-wrap').hidden = true;
+        say('ส่งคำขอแล้ว สถานะ: รอการอนุมัติ','good');
+        date = b.date; curB = b.building; render();
+      }
+    }catch(e){ say('ส่งคำขอไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
+    btn.disabled = false;
+  });
+
+  /* ---------- booking page rendering ---------- */
+  function renderTabs(){
+    var t = $('#tabs'); t.innerHTML = '';
+    BUILDINGS.forEach(function(b){
+      var n = all.filter(function(x){ return x.building === b.id && x.date === date && blocking(x); }).length;
+      var btn = el('button','tab'); btn.type = 'button'; btn.setAttribute('role','tab');
+      btn.style.setProperty('--tb', bcol(b).bg); btn.style.setProperty('--tf', bcol(b).fg);
+      btn.setAttribute('aria-selected', b.id === curB ? 'true' : 'false');
+      btn.appendChild(document.createTextNode(b.name));
+      btn.appendChild(el('small',null, b.rooms.length+' ห้อง · วันนี้มีจอง '+n+' รายการ'));
+      btn.addEventListener('click', function(){ curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
+      t.appendChild(btn);
+    });
+  }
+
+  function renderGrid(){
+    var g = $('#grid'); g.innerHTML = '';
+    var rooms = bOf(curB).rooms;
+    g.style.setProperty('--cols', rooms.length);
+    g.style.setProperty('--tb', bcol(bOf(curB)).bg);
+    var h0 = el('div','hd t','เวลา'); h0.style.gridRow = '1'; g.appendChild(h0);
+    rooms.forEach(function(r,i){
+      var h = el('div','hd'); h.style.gridColumn = String(i+2);
+      h.appendChild(el('span',null,r.name));
+      if(r.seats) h.appendChild(el('small',null,r.seats+' ที่นั่ง'));
+      g.appendChild(h);
+    });
+    var day = all.filter(function(b){ return b.date === date && b.building === curB && blocking(b); });
+    for(let i=0;i<N;i++){ /* let, so each cell's click handler keeps its own slot */
+      var hr = (i % 2 === 0);
+      var t = el('div','tl'+(hr?' hr':''), hr ? tl(i) : ''); t.style.gridRow = String(i+2); g.appendChild(t);
+      rooms.forEach(function(room,ci){
+        var busy = day.some(function(b){ return b.room===room.id && b.start<=i && i<b.end; });
+        if(busy) return;
+        var c = el('button','cell'+(hr?' hr':'')); c.type='button';
+        c.style.gridColumn = String(ci+2); c.style.gridRow = String(i+2);
+        c.setAttribute('aria-label', room.name+' '+tl(i)+'-'+tl(i+1)+' ว่าง');
+        c.addEventListener('click', function(){
+          $('#f-bld').value = curB; syncRooms(); $('#f-room').value = room.id; $('#f-date').value = date;
+          $('#f-start').value = i; $('#f-end').value = Math.min(N, i+2); /* start = clicked slot, end = start + 1 hour (2 slots) */
+          $('#f-title').focus();
+        });
+        g.appendChild(c);
+      });
+    }
+    day.forEach(function(b){
+      var ci = rooms.map(function(r){ return r.id; }).indexOf(b.room); if(ci<0) return;
+      var k = el('button','bk '+b.status+(selected===b.id?' sel':'')); k.type='button';
+      k.style.gridColumn = String(ci+2); k.style.gridRow = (b.start+2)+' / '+(b.end+2);
+      k.appendChild(el('b',null,b.title));
+      k.appendChild(el('span',null,tl(b.start)+'–'+tl(b.end)+' · '+(b.unit||'')+(b.status==='pending' ? ' · รออนุมัติ' : '')));
+      paint(k, b.unit);
+      var ek = eqList(b); k.title = 'ผู้จอง: '+(b.name||'-')+' · อุปกรณ์: '+(ek.length ? ek.join(', ') : 'ไม่ขอใช้อุปกรณ์');
+      k.addEventListener('click', function(){ openDetail(b.id); });
+      g.appendChild(k);
+    });
+    $('#dayEmpty').hidden = day.length > 0 || local;
+    var lg = $('#unitLegend'); lg.innerHTML = '';
+    var used = {}; day.forEach(function(b){ used[b.unit || ''] = true; });
+    var names = UNITS.map(function(u){ return u.n; }).filter(function(n){ return used[n]; });
+    Object.keys(used).forEach(function(n){ if(n && HUE[n] == null) names.push(n); });
+    names.forEach(function(n){
+      var s = el('span'), i = el('i','sw u'); paint(i, n); i.classList.remove('hu', 'nounit'); if(HUE[n] == null) i.classList.add('none');
+      s.appendChild(i); s.appendChild(document.createTextNode(n)); lg.appendChild(s);
+    });
+    lg.hidden = !names.length;
+  }
+
+  function actions(b){
+    var box = el('div','acts');
+    function mk(label, cls, status){
+      var key = b.id+':'+status;
+      var isArmed = armed === key && (status==='cancelled' || status==='rejected');
+      var btn = el('button','btn sm '+cls, isArmed ? 'ยืนยัน: '+label : label); btn.type='button';
+      btn.addEventListener('click', function(){
+        if(status==='cancelled' || status==='rejected'){
+          if(armed !== key){ armed = key; clearTimeout(armTimer); armTimer = setTimeout(function(){ armed = null; render(); }, 4000); render(); return; }
+          armed = null;
+        }
+        setStatus(b.id, status);
+      });
+      box.appendChild(btn);
+    }
+    if(canEdit && b.status==='pending'){ mk('อนุมัติ','ok','approved'); mk('ไม่อนุมัติ','bad','rejected'); }
+    if(canEdit && b.status==='approved'){ mk('ยกเลิก','bad','cancelled'); }
+    else if(!canEdit && b.createdBy===me && blocking(b)){ mk('ยกเลิกการจอง','bad','cancelled'); }
+    return box;
+  }
+
+  function eqList(b){
+    var eq = (b.equip||[]).filter(function(k){ return EQ[k]; }).map(function(k){ return EQ[k]; });
+    if((b.equip||[]).indexOf('online') >= 0) eq.push('Online'+(b.onlineDetail ? ' ('+b.onlineDetail+')' : ''));
+    return eq;
+  }
+  function lineP(label, value){
+    var p = el('p','sum'); p.appendChild(el('b',null,label+' ')); p.appendChild(document.createTextNode(value)); return p;
+  }
+
+  /* ---------- booking detail sheet ---------- */
+  var openId = null, lastFocus = null;
+  function openDetail(id){ openId = id; selected = id; lastFocus = document.activeElement; render(); $('#mClose').focus(); }
+  function closeDetail(silent){
+    openId = null; $('#modal').hidden = true;
+    if(silent) return;
+    selected = null; render();
+    try{ if(lastFocus && lastFocus.focus) lastFocus.focus(); }catch(e){}
+  }
+  function renderDetail(){
+    var m = $('#modal'), b = openId && all.filter(function(x){ return x.id === openId; })[0];
+    if(!b){ openId = null; m.hidden = true; return; }
+    m.hidden = false;
+    $('#mTitle').textContent = b.title;
+    var body = $('#mBody'); body.innerHTML = '';
+    var bl = findB(b.building), rm = bl && bl.rooms.filter(function(r){ return r.id === b.room; })[0];
+    body.style.setProperty('--h', HUE[b.unit] != null ? HUE[b.unit] : 355);
+    function row(label, val, hl){
+      var dt = el('dt',hl ? 'hl' : null,label), dd = el('dd',hl ? 'hl' : null);
+      if(typeof val === 'string') dd.textContent = val; else dd.appendChild(val);
+      body.appendChild(dt); body.appendChild(dd);
+    }
+    row('สถานะ', el('span','chip '+b.status, ST[b.status]||b.status));
+    row('อาคาร', bl ? bl.name : (b.buildingShort || '-'));
+    row('ห้อง', roomName(b) + (rm && rm.seats ? ' (' + rm.seats + ' ที่นั่ง)' : ''), true);
+    row('วันที่', thDate(b.date), true);
+    row('เวลา', tl(b.start)+'–'+tl(b.end)+' น.', true);
+    row('หน่วยงาน', b.unit || '-');
+    row('ผู้จอง', b.name || '-');
+    if(b.count) row('ผู้เข้าร่วม', b.count + ' คน');
+    var eq = eqList(b);
+    row('อุปกรณ์', eq.length ? eq.join(', ') : 'ไม่ขอใช้อุปกรณ์');
+    var food = [];
+    if(b.coffeeAM) food.push('กาแฟ/ชา (เช้า)'); if(b.coffeePM) food.push('กาแฟ/ชา (บ่าย)'); if(b.lunch) food.push('อาหารกลางวัน');
+    row('อาหาร/เครื่องดื่ม', food.length ? food.join(', ') : 'ไม่รับ');
+    if(b.note) row('รายละเอียด', b.note);
+    var a = actions(b), box = $('#mActs'); box.innerHTML = '';
+    while(a.firstChild) box.appendChild(a.firstChild);
+  }
+  $('#mClose').addEventListener('click', function(){ closeDetail(false); });
+  $('#modal').addEventListener('click', function(e){ if(e.target === $('#modal')) closeDetail(false); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && openId) closeDetail(false); });
+
+  function itemFor(b, withDate){
+    var li = el('li','item'+(selected===b.id?' sel':'')+(blocking(b)?'':' dim')); li.id = (withDate?'ia-':'it-')+b.id;
+    if(HUE[b.unit] != null) paint(li, b.unit);
+    var row = el('div','row');
+    row.appendChild(el('span','mono', (withDate ? thShort(b.date)+' · ' : '')+roomLabel(b)+' · '+tl(b.start)+'–'+tl(b.end)));
+    row.appendChild(el('span','chip '+b.status, ST[b.status]||b.status));
+    li.appendChild(row);
+    li.appendChild(el('div','ttl',b.title));
+    li.appendChild(lineP('ผู้จอง', (b.name||'-')+(b.unit ? ' · '+b.unit : '')));
+    var eq = eqList(b);
+    li.appendChild(lineP('อุปกรณ์', eq.length ? eq.join(', ') : 'ไม่ขอใช้อุปกรณ์'));
+    var meta = [];
+    if(b.count) meta.push('ผู้เข้าร่วม '+b.count+' คน');
+    var food = [];
+    if(b.coffeeAM) food.push('กาแฟ/ชาเช้า'); if(b.coffeePM) food.push('กาแฟ/ชาบ่าย'); if(b.lunch) food.push('อาหารกลางวัน');
+    if(food.length) meta.push('รับ: '+food.join(', '));
+    if(meta.length) li.appendChild(el('p',null,meta.join(' · ')));
+    if(b.note) li.appendChild(el('p',null,b.note));
+    var a = actions(b); if(a.childNodes.length) li.appendChild(a);
+    if(!withDate){
+      li.addEventListener('click', function(ev){ if(ev.target.tagName==='BUTTON') return; selected = b.id; date = b.date; if(findB(b.building)) curB = b.building; render(); });
+    }
+    return li;
+  }
+
+
+  /* ---------- admin page ---------- */
+  function pendingCount(){ return all.filter(function(b){ return b.status==='pending'; }).length; }
+  function renderRequests(){
+    var byDate = function(a,b){ return a.date.localeCompare(b.date) || a.start-b.start; };
+    var p = all.filter(function(b){ return b.status==='pending'; }).sort(byDate);
+    var a = all.filter(function(b){ return b.status==='approved' && b.date >= todayStr(); }).sort(byDate);
+    $('#pendCount').textContent = p.length ? '(' + p.length + ')' : '';
+    var up = $('#aPending'); up.innerHTML = '';
+    if(!p.length) up.appendChild(el('li','empty','ไม่มีคำขอที่รออนุมัติ'));
+    p.forEach(function(b){ up.appendChild(itemFor(b,true)); });
+    var ua = $('#aApproved'); ua.innerHTML = '';
+    if(!a.length) ua.appendChild(el('li','empty','ยังไม่มีรายการที่อนุมัติ'));
+    a.forEach(function(b){ ua.appendChild(itemFor(b,true)); });
+  }
+
+  function resetDraft(){ draft = clone(BUILDINGS); dirty = false; }
+  function markDirty(){ dirty = true; $('#cfgSave').disabled = false; $('#cfgReset').disabled = false; $('#cfgMsg').textContent = ''; $('#cfgMsg').className = 'msg'; }
+  function inp(label, val, cls, on, type){
+    var l = el('label', cls); l.appendChild(document.createTextNode(label));
+    var i = document.createElement('input'); i.type = type || 'text'; i.value = val == null ? '' : val;
+    if(type === 'number'){ i.min = '1'; i.inputMode = 'numeric'; }
+    i.addEventListener('input', function(){ on(i.value); markDirty(); });
+    l.appendChild(i); return l;
+  }
+  function armBtn(label, key, fn){
+    var on = cfgArm === key;
+    var b = el('button','btn sm bad', on ? 'ยืนยัน: '+label : label); b.type = 'button';
+    b.addEventListener('click', function(){
+      if(!on){ cfgArm = key; clearTimeout(cfgTimer); cfgTimer = setTimeout(function(){ cfgArm = null; renderCfg(); }, 4000); renderCfg(); return; }
+      cfgArm = null; fn();
+    });
+    return b;
+  }
+  function renderCfg(){
+    if(!draft) resetDraft();
+    var box = $('#cfgList'); box.innerHTML = '';
+    draft.forEach(function(b,bi){
+      var card = el('div','bld');
+      var head = el('div','rrow');
+      head.appendChild(inp('ชื่ออาคาร', b.name, 'rn', function(v){ b.name = v; }));
+      head.appendChild(inp('ชื่อย่อ (ใช้ในรายการ)', b.short, 'rw', function(v){ b.short = v; }));
+      if(draft.length > 1) head.appendChild(armBtn('ลบอาคาร', 'b:'+b.id, function(){ draft.splice(bi,1); markDirty(); renderCfg(); }));
+      card.appendChild(head);
+      var rooms = el('div','rooms');
+      b.rooms.forEach(function(r,ri){
+        var row = el('div','rrow');
+        row.appendChild(inp('ชื่อห้อง', r.name, 'rn', function(v){ r.name = v; }));
+        row.appendChild(inp('ที่นั่ง', r.seats, 'rs', function(v){ r.seats = v; }, 'number'));
+        var n = all.filter(function(x){ return x.room === r.id && blocking(x); }).length;
+        if(n) row.appendChild(el('span','info','มีการจอง '+n+' รายการ'));
+        if(b.rooms.length > 1) row.appendChild(armBtn('ลบห้อง', 'r:'+r.id, function(){ b.rooms.splice(ri,1); markDirty(); renderCfg(); }));
+        rooms.appendChild(row);
+      });
+      var add = el('button','btn sm','+ เพิ่มห้อง'); add.type = 'button'; add.style.alignSelf = 'flex-start';
+      add.addEventListener('click', function(){ b.rooms.push({id:'r'+uid(), name:'ห้องใหม่', seats:null}); markDirty(); renderCfg(); });
+      rooms.appendChild(add);
+      card.appendChild(rooms);
+      box.appendChild(card);
+    });
+    $('#cfgSave').disabled = !dirty; $('#cfgReset').disabled = !dirty;
+  }
+  $('#addB').addEventListener('click', function(){
+    if(!draft) resetDraft();
+    draft.push({id:'b'+uid(), name:'อาคารใหม่', short:'อาคารใหม่', rooms:[{id:'r'+uid(), name:'ห้องใหม่', seats:null}]});
+    markDirty(); renderCfg();
+  });
+  $('#cfgReset').addEventListener('click', function(){ resetDraft(); renderCfg(); $('#cfgMsg').textContent = ''; });
+  $('#cfgSave').addEventListener('click', async function(){
+    var msg = $('#cfgMsg'), out = [];
+    function bad(t){ msg.textContent = t; msg.className = 'msg err'; }
+    for(var i=0;i<draft.length;i++){
+      var b = draft[i], name = (b.name||'').trim();
+      if(!name) return bad('กรุณากรอกชื่ออาคารให้ครบ');
+      if(!b.rooms.length) return bad('แต่ละอาคารต้องมีอย่างน้อย 1 ห้อง');
+      var rooms = [];
+      for(var j=0;j<b.rooms.length;j++){
+        var r = b.rooms[j], rn = (r.name||'').trim();
+        if(!rn) return bad('กรุณากรอกชื่อห้องให้ครบ (อาคาร: '+name+')');
+        var s = parseInt(r.seats,10);
+        rooms.push({id:r.id, name:rn, seats: s > 0 ? s : null});
+      }
+      out.push({id:b.id, name:name, short:(b.short||'').trim() || name, rooms:rooms});
+    }
+    $('#cfgSave').disabled = true;
+    try{
+      if(local){ BUILDINGS = clone(out); onVenues(); }
+      else await db.doc('config/venues').set({buildings:out, updatedBy:me, updatedAt:Date.now()});
+      dirty = false; resetDraft(); renderCfg();
+      msg.textContent = 'บันทึกแล้ว'; msg.className = 'msg good';
+    }catch(e){ $('#cfgSave').disabled = false; bad('บันทึกไม่สำเร็จ เฉพาะผู้มีสิทธิ์แก้ไขเท่านั้นที่เปลี่ยนค่านี้ได้'); }
+  });
+
+  /* ---------- page shell ---------- */
+  function renderBanner(){
+    var b = $('#banner'), msg = '';
+    if(auth !== 'in' && auth !== 'demo') msg = '';
+    else if(auth === 'demo') msg = 'โหมดทดลอง: ยังไม่ได้เชื่อมต่อที่เก็บข้อมูลร่วม ข้อมูลในหน้านี้ไม่ถูกบันทึก (รายการตัวอย่างระบุไว้ในชื่อเรื่อง)';
+    else if(loadErr) msg = loadErr;
+    else if(location.hash === '#admin' && !canEdit) msg = 'หน้าผู้ดูแลสำหรับผู้มีสิทธิ์แก้ไขเท่านั้น';
+    else if(!canWrite) msg = 'บัญชีนี้ดูตารางได้อย่างเดียว ไม่สามารถส่งคำขอจองได้';
+    b.hidden = !msg; b.textContent = msg;
+  }
+  function showMe(who){
+    $('#meImg').hidden = false; $('#meImg').src = who.avatarUrl;
+    $('#meName').textContent = who.name || 'ผู้ใช้';
+    $('#meRole').textContent = canEdit ? 'ผู้ดูแล' : (canWrite ? 'ผู้จอง' : 'ดูอย่างเดียว');
+    $('#meRole').hidden = false; $('#exitDemo').hidden = true;
+  }
+  function renderLogin(){
+    var chk = auth === 'checking';
+    $('#eyebrow').textContent = 'Smart Classroom · ห้องประชุม';
+    $('#loginStatus').textContent = chk ? 'กำลังตรวจสอบบัญชีของคุณ…' : 'ยังไม่พบการเข้าสู่ระบบที่มีสิทธิ์ใช้งานหน้านี้';
+    $('#loginHelp').hidden = chk; $('#loginLink').hidden = chk;
+    $('#recheck').disabled = chk; $('#demo').disabled = chk;
+  }
+  function route(){
+    var gate = auth !== 'in' && auth !== 'demo';
+    view = (!gate && location.hash === '#admin' && canEdit) ? 'admin' : 'main';
+    $('#viewLogin').hidden = !gate;
+    $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin';
+    $('#dateNav').hidden = gate || view !== 'main';
+    $('#goAdmin').hidden = gate || !(canEdit && view === 'main'); $('#goMain').hidden = gate || view !== 'admin';
+    $('#meChip').hidden = gate;
+    $('#pageTitle').textContent = gate ? 'เข้าสู่ระบบ' : (view === 'admin' ? 'หน้าผู้ดูแล' : 'ระบบจองห้องประชุม');
+    render();
+  }
+  function render(){
+    if(auth !== 'in' && auth !== 'demo'){ closeDetail(true); renderBanner(); renderLogin(); return; }
+    var total = BUILDINGS.reduce(function(n,b){ return n + b.rooms.length; }, 0);
+    $('#eyebrow').textContent = BUILDINGS.length + ' อาคาร · ' + total + ' ห้องประชุม';
+    var pc = pendingCount();
+    $('#goAdmin').textContent = 'หน้าผู้ดูแล' + (pc ? ' (' + pc + ')' : '');
+    renderBanner();
+    if(view === 'admin'){ closeDetail(true); renderRequests(); if(!dirty) renderCfg(); return; }
+    $('#dayTitle').textContent = thDate(date);
+    $('#vdate').value = date;
+    renderTabs(); renderGrid(); renderDetail();
+    $('#submit').disabled = !canWrite && !local;
+  }
+  function onVenues(){
+    if(!findB(curB)) curB = BUILDINGS[0].id;
+    refreshFormVenues();
+    if(!dirty){ resetDraft(); }
+    render();
+  }
+
+  $('#prev').addEventListener('click', function(){ date = shift(date,-1); $('#f-date').value = date; render(); });
+  $('#next').addEventListener('click', function(){ date = shift(date,1); $('#f-date').value = date; render(); });
+  $('#today').addEventListener('click', function(){ date = todayStr(); $('#f-date').value = date; render(); });
+  $('#vdate').addEventListener('change', function(){ if($('#vdate').value){ date = $('#vdate').value; $('#f-date').value = date; render(); } });
+  window.addEventListener('hashchange', route);
+
+  /* ---------- start ---------- */
+  $('#demo').addEventListener('click', function(){
+    auth = 'demo'; local = true; canEdit = true; canWrite = true; me = 'local'; all = sample();
+    $('#meImg').hidden = true; $('#meName').textContent = 'โหมดทดลอง'; $('#meRole').hidden = true; $('#exitDemo').hidden = false;
+    route();
+  });
+  $('#exitDemo').addEventListener('click', function(){ auth = 'out'; all = []; route(); });
+  $('#recheck').addEventListener('click', function(){ connect(); });
+
+  initForm();
+  all = [];
+
+  async function connect(){
+    auth = 'checking'; route();
+    try{
+      if(window.claude && window.claude.use){
+        db = await window.claude.use('db');
+        user = await window.claude.use('user');
+        var who = user ? await user.me() : null;
+        if(db && who && who.id){
+      me = who.id;
+      canEdit = await user.canEdit();
+      var w = await user.can('data.write');
+      canWrite = w !== false;
+      auth = 'in'; showMe(who);
+      local = false; all = []; rawB = []; resetDraft(); route();
+      var timer = setTimeout(function(){ if(!loaded){ loadErr = 'ยังเชื่อมต่อที่เก็บข้อมูลไม่ได้ รายการที่เห็นอาจไม่เป็นปัจจุบัน'; renderBanner(); } }, 10000);
+      var fail = function(){ clearTimeout(timer); loadErr = 'อ่านข้อมูลไม่ได้ในขณะนี้'; render(); };
+      db.doc('config/venues').onSnapshot(function(snap){
+        var d = snap.exists ? snap.data() : null;
+        BUILDINGS = (d && Array.isArray(d.buildings) && d.buildings.length) ? clone(d.buildings) : clone(DEFAULT_B);
+        onVenues();
+      }, fail);
+      db.collection('decisions').limit(1000).onSnapshot(function(snap){
+        dec = {}; snap.docs.forEach(function(d){ dec[d.id] = d.data(); });
+        recompute(); render();
+      }, fail);
+      db.collection('bookings').orderBy('date').limit(1000).onSnapshot(function(snap){
+        rawB = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+        if(!snap.metadata.fromCache){ loaded = true; loadErr = ''; clearTimeout(timer); }
+        recompute(); render();
+      }, fail);
+      return;
+        }
+      }
+    }catch(e){ /* fall through to the login page */ }
+    auth = 'out'; local = true; all = []; route();
+  }
+  connect();
+})();
+</script>
+</body>
+</html>
