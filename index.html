@@ -99,6 +99,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .sw.u{background:hsl(var(--h) var(--u-bgs) var(--u-bg));border-color:hsl(var(--h) 55% var(--u-bd))}
 .sw.u.none{background:var(--off-bg);border-color:var(--line)}
 .bk.sel{outline:2px solid var(--accent);outline-offset:1px}
+.layout.guest{grid-template-columns:minmax(0,1fr)}
 .side{display:flex;flex-direction:column;gap:18px;min-width:0}
 .form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .form .full{grid-column:1/-1}
@@ -178,6 +179,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         <button class="btn sm" id="exitDemo" type="button" hidden>ออกจากโหมดทดลอง</button>
       </span>
       <a class="btn" id="goAdmin" href="#admin" hidden>หน้าผู้ดูแล</a>
+      <button class="btn primary" id="goLogin" type="button" hidden>เข้าสู่ระบบ</button>
       <a class="btn" id="goMain" href="#main" hidden>‹ กลับหน้าจอง</a>
     </nav>
   </header>
@@ -201,6 +203,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         <button class="btn primary" id="doLogin" type="submit">เข้าสู่ระบบ</button>
         <button class="btn" id="doSignup" type="button">สมัครใช้งาน</button>
         <button class="btn" id="backLogin" type="button" hidden>‹ กลับไปเข้าสู่ระบบ</button>
+        <button class="btn" id="backGuest" type="button" hidden>‹ กลับไปดูตาราง</button>
       </div>
     </form>
   </section>
@@ -219,7 +222,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       <div class="tabs" id="tabs" role="tablist" aria-label="เลือกอาคาร"></div>
       <div class="scroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
       <div class="legend units" id="unitLegend" aria-label="สีของหน่วยงาน" hidden></div>
-      <p class="empty" id="dayEmpty" hidden>ยังไม่มีการจองในวันนี้ คลิกช่องว่างในตารางหรือกรอกแบบฟอร์มทางขวาเพื่อจองห้อง</p>
+      <p class="empty" id="dayEmpty" hidden>ยังไม่มีการจองในวันนี้ คลิกช่องว่างในตารางเพื่อจองห้อง</p>
     </section>
 
     <aside class="side">
@@ -365,7 +368,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   var db = null, user = null, me = 'local', canEdit = true, canWrite = true, local = true, loaded = false, loadErr = '';
   var rawB = [], dec = {}, all = [];
   var date = todayStr();
-  var curB = BUILDINGS[0].id, view = 'main', auth = 'checking'; /* auth: checking | out | in | demo */
+  var curB = BUILDINGS[0].id, view = 'main', auth = 'checking'; /* auth: checking | out (login page) | guest (view only) | in | demo */
+  var pending = null; /* slot a guest clicked before signing in */
+  function gated(){ return auth === 'out' || auth === 'checking'; }
   var selected = null, armed = null, armTimer = null;
   var draft = null, dirty = false, cfgArm = null, cfgTimer = null;
 
@@ -403,10 +408,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       start_slot:b.start, end_slot:b.end, title:b.title, unit:b.unit, name:b.name, note:b.note||null, count:b.count,
       coffee_am:!!b.coffeeAM, coffee_pm:!!b.coffeePM, lunch:!!b.lunch, equip:b.equip, online_detail:b.onlineDetail||null};
   }
+  var BCOLS = 'id,building,room,room_name,building_short,date,start_slot,end_slot,title,unit,name,note,count,coffee_am,coffee_pm,lunch,equip,online_detail,cancelled';
   async function loadAll(){
     var rs = await Promise.all([
-      sb.from('bookings').select('*').order('date').limit(1000),
-      sb.from('decisions').select('*').limit(1000),
+      sb.from('bookings').select(auth === 'in' ? '*' : BCOLS).order('date').limit(1000),
+      sb.from('decisions').select('booking_id,status').limit(1000),
       sb.from('venues_config').select('buildings').eq('id',1).maybeSingle()
     ]);
     if(rs[0].error || rs[1].error){ loadErr = 'อ่านข้อมูลไม่ได้ในขณะนี้'; render(); return; }
@@ -565,6 +571,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         c.style.gridColumn = String(ci+2); c.style.gridRow = String(i+2);
         c.setAttribute('aria-label', room.name+' '+tl(i)+'-'+tl(i+1)+' ว่าง');
         c.addEventListener('click', function(){
+          if(auth === 'guest'){ pending = {b:curB, room:room.id, date:date, i:i}; auth = 'out'; route(); loginSay('กรุณาเข้าสู่ระบบก่อนจอง ' + room.name + ' เวลา ' + tl(i) + ' น.'); return; }
           $('#f-bld').value = curB; syncRooms(); $('#f-room').value = room.id; $('#f-date').value = date;
           $('#f-start').value = i; $('#f-end').value = Math.min(N, i+2); /* start = clicked slot, end = start + 1 hour (2 slots) */
           $('#f-title').focus();
@@ -789,9 +796,10 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   /* ---------- page shell ---------- */
   function renderBanner(){
     var b = $('#banner'), msg = '';
-    if(auth !== 'in' && auth !== 'demo') msg = '';
+    if(gated()) msg = '';
     else if(auth === 'demo') msg = 'โหมดทดลอง: ยังไม่ได้เชื่อมต่อที่เก็บข้อมูลร่วม ข้อมูลในหน้านี้ไม่ถูกบันทึก (รายการตัวอย่างระบุไว้ในชื่อเรื่อง)';
     else if(loadErr) msg = loadErr;
+    else if(auth === 'guest') msg = '';
     else if(location.hash === '#admin' && !canEdit) msg = 'หน้าผู้ดูแลสำหรับผู้มีสิทธิ์แก้ไขเท่านั้น';
     else if(!canWrite) msg = 'บัญชีนี้ดูตารางได้อย่างเดียว ไม่สามารถส่งคำขอจองได้';
     b.hidden = !msg; b.textContent = msg;
@@ -807,20 +815,23 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#eyebrow').textContent = '';
     $('#loginStatus').hidden = !chk; $('#loginStatus').textContent = 'กำลังตรวจสอบบัญชีของคุณ…';
     $('#loginForm').hidden = chk;
+    $('#backGuest').hidden = chk || !sb || signupMode;
   }
   function route(){
-    var gate = auth !== 'in' && auth !== 'demo';
+    var gate = gated(), guest = auth === 'guest';
     view = (!gate && location.hash === '#admin' && canEdit) ? 'admin' : 'main';
     $('#viewLogin').hidden = !gate;
     $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin';
+    $('#viewMain').classList.toggle('guest', guest); $('.side').hidden = guest;
     $('#dateNav').hidden = gate || view !== 'main';
     $('#goAdmin').hidden = gate || !(canEdit && view === 'main'); $('#goMain').hidden = gate || view !== 'admin';
-    $('#meChip').hidden = gate;
-    $('#pageTitle').textContent = gate ? 'เข้าสู่ระบบ' : (view === 'admin' ? 'หน้าผู้ดูแล' : 'ระบบจองห้องประชุม');
+    $('#goLogin').hidden = !guest;
+    $('#meChip').hidden = gate || guest;
+    $('#pageTitle').textContent = gate ? (signupMode ? 'สมัครใช้งาน' : 'เข้าสู่ระบบ') : (view === 'admin' ? 'หน้าผู้ดูแล' : 'ระบบจองห้องประชุม');
     render();
   }
   function render(){
-    if(auth !== 'in' && auth !== 'demo'){ closeDetail(true); renderBanner(); renderLogin(); return; }
+    if(gated()){ closeDetail(true); renderBanner(); renderLogin(); return; }
     var total = BUILDINGS.reduce(function(n,b){ return n + b.rooms.length; }, 0);
     $('#eyebrow').textContent = BUILDINGS.length + ' อาคาร · ' + total + ' ห้องประชุม';
     var pc = pendingCount();
@@ -884,6 +895,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#loginTitle').textContent = on ? 'สมัครใช้งานระบบจองห้อง' : 'เข้าสู่ระบบเพื่อจองห้อง';
     $('#lg-pass').autocomplete = on ? 'new-password' : 'current-password';
     $('#lg-name').required = on; $('#lg-unit').required = on;
+    $('#pageTitle').textContent = on ? 'สมัครใช้งาน' : 'เข้าสู่ระบบ'; $('#backGuest').hidden = on || !sb;
   }
   $('#lg-unit').innerHTML = '<option value="">เลือกหน่วยงาน</option>' + $('#f-unit').innerHTML.replace(/<option value="">[^<]*<\/option>/, '');
   $('#backLogin').addEventListener('click', function(){ setMode(false); });
@@ -903,12 +915,22 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 
   var entering = false, channel = null, profile = {};
   function applyProfile(){ if(profile.full_name) $('#f-name').value = profile.full_name; if(profile.unit) setUnit(profile.unit); }
+  function startSync(){
+    if(channel) sb.removeChannel(channel);
+    var t = null;
+    channel = sb.channel('mr-sync').on('postgres_changes', {event:'*', schema:'public'}, function(){ clearTimeout(t); t = setTimeout(loadAll, 250); }).subscribe();
+  }
+  async function startGuest(){
+    me = 'guest'; canEdit = false; canWrite = false; local = false; auth = 'guest';
+    all = []; rawB = []; dec = {}; loaded = false; loadErr = ''; profile = {};
+    route(); await loadAll(); startSync();
+  }
   async function enter(session){
     if(entering) return; entering = true;
     try{
       if(!session){
-        if(channel){ sb.removeChannel(channel); channel = null; }
-        if(auth === 'in' || auth === 'checking'){ resetForm(); auth = 'out'; local = true; all = []; rawB = []; dec = {}; canEdit = false; route(); }
+        if(auth === 'in'){ resetForm(); await startGuest(); }
+        else if(auth === 'checking') await startGuest();
         return;
       }
       if(auth === 'in' && me === session.user.id) return;
@@ -922,11 +944,19 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       applyProfile();
       resetDraft(); route();
       await loadAll();
-      if(channel) sb.removeChannel(channel);
-      var t = null;
-      channel = sb.channel('mr-sync').on('postgres_changes', {event:'*', schema:'public'}, function(){ clearTimeout(t); t = setTimeout(loadAll, 250); }).subscribe();
+      startSync();
+      if(pending){
+        var pd = pending; pending = null;
+        if(findB(pd.b)) curB = pd.b;
+        date = pd.date; $('#f-bld').value = curB; syncRooms(); $('#f-room').value = pd.room; $('#f-date').value = date;
+        $('#f-start').value = pd.i; $('#f-end').value = Math.min(N, pd.i + 2);
+        render(); $('#f-title').focus();
+      }
     } finally { entering = false; }
   }
+
+  $('#goLogin').addEventListener('click', function(){ pending = null; auth = 'out'; route(); });
+  $('#backGuest').addEventListener('click', function(){ pending = null; setMode(false); auth = 'guest'; route(); });
 
   async function connect(){
     auth = 'checking'; route();
@@ -934,7 +964,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     sb.auth.onAuthStateChange(function(ev, session){ setTimeout(function(){ enter(session); }, 0); });
     var r = await sb.auth.getSession();
-    if(!r.data.session){ auth = 'out'; local = true; all = []; route(); }
+    if(!r.data.session && auth === 'checking') startGuest();
   }
   connect();
 })();
