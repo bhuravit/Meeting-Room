@@ -263,15 +263,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 
   <!-- ===== admin page ===== -->
   <div class="admin" id="viewAdmin" hidden>
-    <section class="card stack" aria-labelledby="reqTitle">
-      <div class="card-head"><h2 id="reqTitle">คำขอจอง</h2></div>
-      <p class="msg" id="aMsg" role="status" aria-live="polite"></p>
-      <h3>รออนุมัติ <span class="mono" id="pendCount"></span></h3>
-      <ul class="list" id="aPending"></ul>
-      <h3>อนุมัติแล้ว ตั้งแต่วันนี้เป็นต้นไป</h3>
-      <ul class="list" id="aApproved"></ul>
-    </section>
-
     <section class="card stack" aria-labelledby="cfgTitle">
       <div class="card-head">
         <h2 id="cfgTitle">อาคารและห้องประชุม</h2>
@@ -445,7 +436,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       await loadAll();
     }catch(e){ say('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
   }
-  function say(text, kind){ var m = view === 'admin' ? $('#aMsg') : $('#msg'); m.textContent = text; m.className = 'msg ' + (kind||''); }
+  function say(text, kind){ var m = view === 'admin' ? $('#cfgMsg') : $('#msg'); m.textContent = text; m.className = 'msg ' + (kind||''); }
 
   /* ---------- booking form ---------- */
   function fillSelect(sel, items){ sel.innerHTML=''; items.forEach(function(it){ var o = el('option',null,it[1]); o.value = it[0]; sel.appendChild(o); }); }
@@ -703,18 +694,14 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 
   /* ---------- admin page ---------- */
   function pendingCount(){ return all.filter(function(b){ return b.status==='pending'; }).length; }
-  function renderRequests(){
-    var byDate = function(a,b){ return a.date.localeCompare(b.date) || a.start-b.start; };
-    var p = all.filter(function(b){ return b.status==='pending'; }).sort(byDate);
-    var a = all.filter(function(b){ return b.status==='approved' && b.date >= todayStr(); }).sort(byDate);
-    $('#pendCount').textContent = p.length ? '(' + p.length + ')' : '';
-    var up = $('#aPending'); up.innerHTML = '';
-    if(!p.length) up.appendChild(el('li','empty','ไม่มีคำขอที่รออนุมัติ'));
-    p.forEach(function(b){ up.appendChild(itemFor(b,true)); });
-    var ua = $('#aApproved'); ua.innerHTML = '';
-    if(!a.length) ua.appendChild(el('li','empty','ยังไม่มีรายการที่อนุมัติ'));
-    a.forEach(function(b){ ua.appendChild(itemFor(b,true)); });
+  /* An admin jumps to the oldest pending request: its day and building open, then its detail sheet (approve / reject there). */
+  function jumpPending(){
+    var p = all.filter(function(b){ return b.status==='pending'; }).sort(function(a,b){ return a.date.localeCompare(b.date) || a.start-b.start; })[0];
+    if(!p) return;
+    date = p.date; if(findB(p.building)) curB = p.building; $('#f-date').value = date;
+    openDetail(p.id);
   }
+  $('#banner').addEventListener('click', function(){ if(this.dataset.jump) jumpPending(); });
 
   function resetDraft(){ draft = clone(BUILDINGS); dirty = false; }
   function markDirty(){ dirty = true; $('#cfgSave').disabled = false; $('#cfgReset').disabled = false; $('#cfgMsg').textContent = ''; $('#cfgMsg').className = 'msg'; }
@@ -801,7 +788,10 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     else if(loadErr) msg = loadErr;
     else if(auth === 'guest') msg = '';
     else if(location.hash === '#admin' && !canEdit) msg = 'หน้าผู้ดูแลสำหรับผู้มีสิทธิ์แก้ไขเท่านั้น';
+    else if(canEdit && view !== 'admin' && pendingCount()) msg = 'มีคำขอรออนุมัติ ' + pendingCount() + ' รายการ · คลิกที่นี่เพื่อไปที่รายการแรก แล้วกดอนุมัติในรายละเอียดการจอง (หรือคลิกบล็อกกรอบประในตาราง)';
     else if(!canWrite) msg = 'บัญชีนี้ดูตารางได้อย่างเดียว ไม่สามารถส่งคำขอจองได้';
+    var jump = !!msg && canEdit && view !== 'admin' && auth === 'in' && !loadErr && msg.indexOf('มีคำขอรออนุมัติ') === 0;
+    b.dataset.jump = jump ? '1' : ''; b.style.cursor = jump ? 'pointer' : '';
     b.hidden = !msg; b.textContent = msg;
   }
   function showMe(who){
@@ -835,9 +825,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var total = BUILDINGS.reduce(function(n,b){ return n + b.rooms.length; }, 0);
     $('#eyebrow').textContent = BUILDINGS.length + ' อาคาร · ' + total + ' ห้องประชุม';
     var pc = pendingCount();
-    $('#goAdmin').textContent = 'หน้าผู้ดูแล' + (pc ? ' (' + pc + ')' : '');
     renderBanner();
-    if(view === 'admin'){ closeDetail(true); renderRequests(); if(!dirty) renderCfg(); return; }
+    if(view === 'admin'){ closeDetail(true); if(!dirty) renderCfg(); return; }
     $('#dayTitle').textContent = thDate(date);
     $('#vdate').value = date;
     renderTabs(); renderGrid(); renderDetail();
