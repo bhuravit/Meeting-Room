@@ -263,6 +263,22 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 
   <!-- ===== admin page ===== -->
   <div class="admin" id="viewAdmin" hidden>
+    <section class="card stack" aria-labelledby="usrTitle">
+      <div class="card-head"><h2 id="usrTitle">ผู้ใช้งาน <span class="mono" id="uCount"></span></h2></div>
+      <p class="sub">ผู้ที่สมัครเข้าระบบจะแสดงที่นี่ ผู้ดูแลเพิ่มผู้ใช้ใหม่ ตั้งสิทธิ์ผู้ดูแล หรือลบผู้ใช้ได้ รายการจองเดิมของผู้ที่ถูกลบจะยังอยู่ในตาราง</p>
+      <form id="uForm" class="stack" style="gap:10px">
+        <h3>เพิ่มผู้ใช้</h3>
+        <label>ชื่อ-นามสกุล<input id="u-name" type="text" maxlength="120" required></label>
+        <label>หน่วยงาน<select id="u-unit" required></select></label>
+        <label>อีเมลสถาบัน<input id="u-email" type="email" placeholder="ชื่อ@stin.ac.th" required></label>
+        <label>รหัสผ่านเริ่มต้น (อย่างน้อย 8 ตัวอักษร)<input id="u-pass" type="text" minlength="8" autocomplete="off" required></label>
+        <label style="flex-direction:row;gap:8px;align-items:center"><input id="u-admin" type="checkbox" style="width:auto"> ให้สิทธิ์ผู้ดูแล</label>
+        <div class="acts"><button class="btn primary" id="uAdd" type="submit">เพิ่มผู้ใช้</button></div>
+        <p class="msg" id="uMsg" role="status" aria-live="polite"></p>
+      </form>
+      <ul class="list" id="uList"></ul>
+    </section>
+
     <section class="card stack" aria-labelledby="cfgTitle">
       <div class="card-head">
         <h2 id="cfgTitle">อาคารและห้องประชุม</h2>
@@ -360,7 +376,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   var rawB = [], dec = {}, all = [];
   var date = todayStr();
   var curB = BUILDINGS[0].id, view = 'main', auth = 'checking'; /* auth: checking | out (login page) | guest (view only) | in | demo */
-  var pending = null; /* slot a guest clicked before signing in */
+  var lastView = '', pending = null; /* slot a guest clicked before signing in */
   function gated(){ return auth === 'out' || auth === 'checking'; }
   var selected = null, armed = null, armTimer = null;
   var draft = null, dirty = false, cfgArm = null, cfgTimer = null;
@@ -780,6 +796,65 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     }catch(e){ $('#cfgSave').disabled = false; bad('บันทึกไม่สำเร็จ เฉพาะผู้มีสิทธิ์แก้ไขเท่านั้นที่เปลี่ยนค่านี้ได้'); }
   });
 
+  /* ---------- user management (admin) ---------- */
+  var users = [], uArm = null, uTimer = null;
+  function uSay(t, kind){ var m = $('#uMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
+  var U_ERR = {exists:'อีเมลนี้มีบัญชีอยู่แล้ว', domain:'เพิ่มได้เฉพาะอีเมลของสถาบัน', self:'ไม่สามารถทำรายการนี้กับบัญชีของตัวเองได้', forbidden:'เฉพาะผู้ดูแลเท่านั้น', invalid_input:'กรอกข้อมูลไม่ครบหรือรหัสผ่านสั้นเกินไป'};
+  async function callUsers(body){
+    var r = await sb.functions.invoke('manage-users', {body: body});
+    if(r.error){
+      var code = ''; try{ code = (await r.error.context.json()).error; }catch(e){}
+      throw new Error(U_ERR[code] || 'ดำเนินการไม่สำเร็จ ลองใหม่อีกครั้ง');
+    }
+    return r.data;
+  }
+  async function loadUsers(){
+    if(!sb || auth !== 'in' || !canEdit) return;
+    var rs = await Promise.all([ sb.from('profiles').select('id,email,full_name,unit,created_at').order('created_at'), sb.from('admins').select('user_id') ]);
+    if(rs[0].error){ uSay('โหลดรายชื่อผู้ใช้ไม่ได้','err'); return; }
+    var adm = {}; (rs[1].data || []).forEach(function(a){ adm[a.user_id] = true; });
+    users = rs[0].data.map(function(u){ return Object.assign({}, u, {isAdmin: !!adm[u.id]}); });
+    renderUsers();
+  }
+  function renderUsers(){
+    $('#uCount').textContent = users.length ? '(' + users.length + ')' : '';
+    var ul = $('#uList'); ul.innerHTML = '';
+    if(!users.length) ul.appendChild(el('li','empty','ยังไม่มีผู้ใช้'));
+    users.forEach(function(u){
+      var li = el('li','item'), row = el('div','row');
+      row.appendChild(el('span','mono', u.full_name || (u.email||'').split('@')[0]));
+      var chip = el('span','chip '+(u.isAdmin?'approved':'pending'), u.id === me ? (u.isAdmin ? 'ผู้ดูแล · คุณ' : 'คุณ') : (u.isAdmin ? 'ผู้ดูแล' : 'ผู้ใช้'));
+      row.appendChild(chip); li.appendChild(row);
+      li.appendChild(lineP('อีเมล', u.email || '-'));
+      if(u.unit) li.appendChild(lineP('หน่วยงาน', u.unit));
+      if(u.id !== me){
+        var box = el('div','acts');
+        var b1 = el('button','btn sm', u.isAdmin ? 'ยกเลิกสิทธิ์ผู้ดูแล' : 'ตั้งเป็นผู้ดูแล'); b1.type = 'button';
+        b1.addEventListener('click', async function(){
+          try{ await callUsers({action:'set_admin', id:u.id, value:!u.isAdmin}); uSay('บันทึกแล้ว','good'); await loadUsers(); }catch(e){ uSay(e.message,'err'); }
+        });
+        var on = uArm === u.id;
+        var b2 = el('button','btn sm bad', on ? 'ยืนยัน: ลบผู้ใช้' : 'ลบผู้ใช้'); b2.type = 'button';
+        b2.addEventListener('click', async function(){
+          if(!on){ uArm = u.id; clearTimeout(uTimer); uTimer = setTimeout(function(){ uArm = null; renderUsers(); }, 4000); renderUsers(); return; }
+          uArm = null;
+          try{ await callUsers({action:'delete', id:u.id}); uSay('ลบผู้ใช้แล้ว','good'); await loadUsers(); }catch(e){ uSay(e.message,'err'); renderUsers(); }
+        });
+        box.appendChild(b1); box.appendChild(b2); li.appendChild(box);
+      }
+      ul.appendChild(li);
+    });
+  }
+  $('#uForm').addEventListener('submit', async function(ev){
+    ev.preventDefault(); uSay('');
+    var btn = $('#uAdd'); btn.disabled = true;
+    try{
+      await callUsers({action:'create', email:$('#u-email').value, password:$('#u-pass').value, full_name:$('#u-name').value, unit:$('#u-unit').value, admin:$('#u-admin').checked});
+      $('#uForm').reset(); uSay('เพิ่มผู้ใช้แล้ว แจ้งอีเมลและรหัสผ่านเริ่มต้นให้ผู้ใช้','good'); await loadUsers();
+    }catch(e){ uSay(e.message,'err'); }
+    btn.disabled = false;
+  });
+
   /* ---------- page shell ---------- */
   function renderBanner(){
     var b = $('#banner'), msg = '';
@@ -816,6 +891,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#dateNav').hidden = gate || view !== 'main';
     $('#goAdmin').hidden = gate || !(canEdit && view === 'main'); $('#goMain').hidden = gate || view !== 'admin';
     $('#goLogin').hidden = !guest;
+    if(view === 'admin' && !gate && lastView !== 'admin') loadUsers();
+    lastView = view;
     $('#meChip').hidden = gate || guest;
     $('#pageTitle').textContent = gate ? (signupMode ? 'สมัครใช้งาน' : 'เข้าสู่ระบบ') : (view === 'admin' ? 'หน้าผู้ดูแล' : 'ระบบจองห้องประชุม');
     render();
@@ -887,6 +964,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#pageTitle').textContent = on ? 'สมัครใช้งาน' : 'เข้าสู่ระบบ'; $('#backGuest').hidden = on || !sb;
   }
   $('#lg-unit').innerHTML = '<option value="">เลือกหน่วยงาน</option>' + $('#f-unit').innerHTML.replace(/<option value="">[^<]*<\/option>/, '');
+  $('#u-unit').innerHTML = '<option value="">เลือกหน่วยงาน</option>' + $('#f-unit').innerHTML.replace(/<option value="">[^<]*<\/option>/, '');
   $('#backLogin').addEventListener('click', function(){ setMode(false); });
   $('#doSignup').addEventListener('click', async function(){
     if(!signupMode){ setMode(true); $('#lg-name').focus(); return; }
