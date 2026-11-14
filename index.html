@@ -244,8 +244,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         <div class="full opt"><span class="ol">อาหารกลางวัน</span>
           <label><input type="radio" name="f-lunch" value="0" checked>ไม่รับ</label><label><input type="radio" name="f-lunch" value="1">รับ</label></div>
         <div class="full opt eq"><span class="ol">อุปกรณ์</span>
-          <label><input type="checkbox" name="f-eq" value="pc">คอมพิวเตอร์ PC</label>
-          <label><input type="checkbox" name="f-eq" value="nb">คอมพิวเตอร์ Notebook</label>
+          <label><input type="checkbox" name="f-eq" value="pc">Computer/Notebook</label>
           <label><input type="checkbox" name="f-eq" value="lcd">LCD Projector</label>
           <label><input type="checkbox" name="f-eq" value="viz">เครื่องฉายภาพ 3 มิติ</label>
           <label><input type="checkbox" name="f-eq" value="sound">ระบบเสียง</label>
@@ -494,7 +493,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
 
   var radio = function(n){ var c = document.querySelector('input[name='+n+']:checked'); return !!c && c.value === '1'; };
-  var EQ = {pc:'คอมพิวเตอร์ PC', nb:'คอมพิวเตอร์ Notebook', lcd:'LCD Projector', viz:'เครื่องฉายภาพ 3 มิติ', sound:'ระบบเสียง'};
+  var EQ = {pc:'Computer/Notebook', nb:'Computer/Notebook', lcd:'LCD Projector', viz:'เครื่องฉายภาพ 3 มิติ', sound:'ระบบเสียง'};
   function unitValue(){ return $('#f-unit').value; }
   function setUnit(v){
     var sel = $('#f-unit');
@@ -631,7 +630,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
 
   function eqList(b){
-    var eq = (b.equip||[]).filter(function(k){ return EQ[k]; }).map(function(k){ return EQ[k]; });
+    var eq = (b.equip||[]).filter(function(k){ return EQ[k]; }).map(function(k){ return EQ[k]; }).filter(function(n,i,a){ return a.indexOf(n) === i; }); /* old bookings may carry both pc and nb */
     if((b.equip||[]).indexOf('online') >= 0) eq.push('Online'+(b.onlineDetail ? ' ('+b.onlineDetail+')' : ''));
     return eq;
   }
