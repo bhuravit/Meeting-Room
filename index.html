@@ -623,6 +623,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       k.style.gridColumn = String(ci+2); k.style.gridRow = (b.start+2)+' / '+(b.end+2);
       k.appendChild(el('b',null,b.title));
       k.appendChild(el('span',null,tl(b.start)+'–'+tl(b.end)+' · '+(b.unit||'')+(b.status==='pending' ? ' · รออนุมัติ' : '')));
+      if(b.name) k.appendChild(el('span',null,'ผู้จอง: '+b.name));
       paint(k, b.unit);
       var ek = eqList(b); k.title = 'ผู้จอง: '+(b.name||'-')+' · อุปกรณ์: '+(ek.length ? ek.join(', ') : 'ไม่ขอใช้อุปกรณ์');
       k.addEventListener('click', function(){ openDetail(b.id); });
