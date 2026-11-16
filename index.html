@@ -265,7 +265,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     </div>
     <section class="card stack" id="secUsers" role="tabpanel" aria-labelledby="atUsers">
       <div class="card-head"><h2 id="usrTitle">ผู้ใช้งาน <span class="mono" id="uCount"></span></h2></div>
-      <p class="sub">ผู้ที่สมัครเข้าระบบจะแสดงที่นี่ ผู้ดูแลเพิ่มผู้ใช้ใหม่ ตั้งสิทธิ์ผู้ดูแล หรือลบผู้ใช้ได้ รายการจองเดิมของผู้ที่ถูกลบจะยังอยู่ในตาราง</p>
+      <p class="sub">ผู้ดูแลเพิ่มผู้ใช้ใหม่ แก้ไขข้อมูลและรหัสผ่าน ตั้งสิทธิ์ผู้ดูแล หรือลบผู้ใช้ได้ รายการจองเดิมของผู้ที่ถูกลบจะยังอยู่ในตาราง</p>
       <form id="uForm" class="stack" style="gap:10px">
         <h3>เพิ่มผู้ใช้</h3>
         <label>ชื่อ-นามสกุล<input id="u-name" type="text" maxlength="120" required></label>
@@ -802,7 +802,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   });
 
   /* ---------- user management (admin) ---------- */
-  var users = [], uArm = null, uTimer = null;
+  var users = [], uArm = null, uTimer = null, uEdit = null;
   function uSay(t, kind){ var m = $('#uMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
   var U_ERR = {exists:'อีเมลนี้มีบัญชีอยู่แล้ว', domain:'เพิ่มได้เฉพาะอีเมลของสถาบัน', self:'ไม่สามารถทำรายการนี้กับบัญชีของตัวเองได้', forbidden:'เฉพาะผู้ดูแลเท่านั้น', invalid_input:'กรอกข้อมูลไม่ครบหรือรหัสผ่านสั้นเกินไป'};
   async function callUsers(body){
@@ -830,8 +830,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       row.appendChild(el('span','mono', u.full_name || (u.email||'').split('@')[0]));
       var chip = el('span','chip '+(u.isAdmin?'approved':'pending'), u.id === me ? (u.isAdmin ? 'ผู้ดูแล · คุณ' : 'คุณ') : (u.isAdmin ? 'ผู้ดูแล' : 'ผู้ใช้'));
       row.appendChild(chip); li.appendChild(row);
+      if(uEdit === u.id){ li.appendChild(editForm(u)); ul.appendChild(li); return; }
       li.appendChild(lineP('อีเมล', u.email || '-'));
       if(u.unit) li.appendChild(lineP('หน่วยงาน', u.unit));
+      var eb = el('button','btn sm','แก้ไขข้อมูล / รหัสผ่าน'); eb.type = 'button';
+      eb.addEventListener('click', function(){ uEdit = u.id; uArm = null; uSay(''); renderUsers(); });
+      if(u.id === me){ var own = el('div','acts'); own.appendChild(eb); li.appendChild(own); }
       if(u.id !== me){
         var box = el('div','acts');
         var b1 = el('button','btn sm', u.isAdmin ? 'ยกเลิกสิทธิ์ผู้ดูแล' : 'ตั้งเป็นผู้ดูแล'); b1.type = 'button';
@@ -845,10 +849,33 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           uArm = null;
           try{ await callUsers({action:'delete', id:u.id}); uSay('ลบผู้ใช้แล้ว','good'); await loadUsers(); }catch(e){ uSay(e.message,'err'); renderUsers(); }
         });
-        box.appendChild(b1); box.appendChild(b2); li.appendChild(box);
+        box.appendChild(eb); box.appendChild(b1); box.appendChild(b2); li.appendChild(box);
       }
       ul.appendChild(li);
     });
+  }
+  function editForm(u){
+    var f = el('form','stack'); f.style.gap = '10px';
+    function field(label, input){ var l = el('label', null, label); l.appendChild(input); f.appendChild(l); return input; }
+    var nm = field('ชื่อ-นามสกุล', el('input')); nm.type = 'text'; nm.maxLength = 120; nm.required = true; nm.value = u.full_name || '';
+    var un = field('หน่วยงาน', el('select')); un.innerHTML = $('#u-unit').innerHTML; un.value = u.unit || '';
+    var em = field('อีเมลสถาบัน', el('input')); em.type = 'email'; em.required = true; em.value = u.email || '';
+    var pw = field('รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)', el('input')); pw.type = 'text'; pw.minLength = 8; pw.autocomplete = 'off'; pw.placeholder = 'อย่างน้อย 8 ตัวอักษร';
+    var acts = el('div','acts');
+    var ok = el('button','btn primary','บันทึก'); ok.type = 'submit';
+    var no = el('button','btn','ยกเลิก'); no.type = 'button';
+    no.addEventListener('click', function(){ uEdit = null; renderUsers(); });
+    acts.appendChild(ok); acts.appendChild(no); f.appendChild(acts);
+    f.addEventListener('submit', async function(ev){
+      ev.preventDefault(); ok.disabled = true;
+      try{
+        await callUsers({action:'update', id:u.id, full_name:nm.value, unit:un.value, email:em.value, password:pw.value});
+        uEdit = null; uSay(pw.value ? 'บันทึกข้อมูลและเปลี่ยนรหัสผ่านแล้ว' : 'บันทึกข้อมูลแล้ว','good');
+        if(u.id === me){ $('#meName').textContent = nm.value || (em.value||'').split('@')[0]; }
+        await loadUsers();
+      }catch(e){ uSay(e.message,'err'); ok.disabled = false; }
+    });
+    return f;
   }
   $('#uForm').addEventListener('submit', async function(ev){
     ev.preventDefault(); uSay('');
