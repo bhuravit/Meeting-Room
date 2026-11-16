@@ -608,7 +608,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         var c = el('button','cell'+(hr?' hr':'')); c.type='button';
         c.style.gridColumn = String(ci+2); c.style.gridRow = String(i+2);
         c.setAttribute('aria-label', room.name+' '+tl(i)+'-'+tl(i+1)+' ว่าง');
-        if(auth === 'in' && canEdit){ c.disabled = true; c.style.cursor = 'default'; g.appendChild(c); return; }
         c.addEventListener('click', function(){
           if(auth === 'guest'){ pending = {b:curB, room:room.id, date:date, i:i}; auth = 'out'; route(); loginSay('กรุณาเข้าสู่ระบบก่อนจอง ' + room.name + ' เวลา ' + tl(i) + ' น.'); return; }
           $('#f-bld').value = curB; syncRooms(); $('#f-room').value = room.id; $('#f-date').value = date;
@@ -630,9 +629,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       g.appendChild(k);
     });
     $('#dayEmpty').hidden = day.length > 0 || local;
-    var adminView = auth === 'in' && canEdit;
-    $('#dayEmpty').textContent = adminView ? 'ยังไม่มีการจองในวันนี้' : 'ยังไม่มีการจองในวันนี้ คลิกช่องว่างในตารางเพื่อจองห้อง';
-    $('#hintClick').textContent = adminView ? 'คลิกการจองเพื่อดูรายละเอียดและอนุมัติ' : 'คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด';
     var lg = $('#unitLegend'); lg.innerHTML = '';
     var used = {}; day.forEach(function(b){ used[b.unit || ''] = true; });
     var names = UNITS.map(function(u){ return u.n; }).filter(function(n){ return used[n]; });
@@ -1053,7 +1049,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#backGuest').hidden = chk || !sb;
   }
   function route(){
-    var gate = gated(), guest = auth === 'guest', adm = auth === 'in' && canEdit, viewOnly = guest || adm; /* guests and admins see the timetable only; the booking form is for signed-in users */
+    var gate = gated(), guest = auth === 'guest', viewOnly = guest; /* guests see the timetable only; signed-in users (admins included) can book */
     view = (!gate && location.hash === '#admin' && canEdit) ? 'admin' : 'main';
     $('#viewLogin').hidden = !gate;
     $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin';
