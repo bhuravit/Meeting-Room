@@ -77,6 +77,19 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .scroll{overflow-x:auto}
 .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px}
 #adminTabs{grid-template-columns:minmax(0,1fr)}
+.rpt-ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.rpt-ctl label{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.seg{display:flex;gap:0}.seg .btn{border-radius:0}.seg .btn:first-child{border-radius:6px 0 0 6px}.seg .btn:last-child{border-radius:0 6px 6px 0;margin-left:-1px}
+.seg .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.kpi b{display:block;font-size:24px;font-variant-numeric:tabular-nums}.kpi span{font-size:12px;opacity:.8}
+.rtbl{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.rtbl li{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.rtbl .nm{overflow-wrap:anywhere}.rtbl .bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.rtbl .bar i{display:block;height:100%;background:var(--accent)}
+.rtbl .v{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.rsec h3{margin:6px 0 8px}
+@media (max-width:560px){.rtbl li{grid-template-columns:minmax(0,1fr) auto}.rtbl .bar{grid-column:1/-1;order:3}}
 .tab{border:1px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:6px;cursor:pointer;min-height:38px;text-align:left;min-width:0;overflow-wrap:anywhere}
 .tab:hover{background:var(--hover)}
 .tab{border-left:5px solid var(--tb,var(--accent))}
@@ -262,6 +275,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     <div class="tabs" id="adminTabs" role="tablist" aria-label="เมนูผู้ดูแล">
       <button class="tab" type="button" role="tab" id="atUsers" aria-selected="true" aria-controls="secUsers">เพิ่มผู้ใช้งาน<small>เพิ่ม ลบ ตั้งสิทธิ์ผู้ดูแล</small></button>
       <button class="tab" type="button" role="tab" id="atVenues" aria-selected="false" aria-controls="secVenues">เพิ่มอาคารห้องประชุม<small>เพิ่ม แก้ไข ลบ อาคารและห้อง</small></button>
+      <button class="tab" type="button" role="tab" id="atReport" aria-selected="false" aria-controls="secReport">รายงานสรุปการใช้งาน<small>รายเดือน รายปี</small></button>
     </div>
     <section class="card stack" id="secUsers" role="tabpanel" aria-labelledby="atUsers">
       <div class="card-head"><h2 id="usrTitle">ผู้ใช้งาน <span class="mono" id="uCount"></span></h2></div>
@@ -277,6 +291,22 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         <p class="msg" id="uMsg" role="status" aria-live="polite"></p>
       </form>
       <ul class="list" id="uList"></ul>
+    </section>
+
+    <section class="card stack" id="secReport" role="tabpanel" aria-labelledby="atReport" hidden>
+      <div class="card-head"><h2>รายงานสรุปการใช้งาน</h2></div>
+      <div class="rpt-ctl">
+        <div class="seg" role="group" aria-label="ช่วงเวลา">
+          <button type="button" class="btn sm" id="rpMonth" aria-pressed="true">รายเดือน</button>
+          <button type="button" class="btn sm" id="rpYear" aria-pressed="false">รายปี</button>
+        </div>
+        <label id="rpMonthWrap">เดือน<input type="month" id="rp-month"></label>
+        <label id="rpYearWrap" hidden>ปี (พ.ศ.)<select id="rp-year"></select></label>
+        <button type="button" class="btn sm" id="rpCsv" disabled>ดาวน์โหลด CSV</button>
+      </div>
+      <p class="sub" id="rpNote">สรุปจากรายการที่อนุมัติแล้วเท่านั้น</p>
+      <p class="msg" id="rpMsg" role="status" aria-live="polite"></p>
+      <div id="rpBody"></div>
     </section>
 
     <section class="card stack" id="secVenues" role="tabpanel" aria-labelledby="atVenues" hidden>
@@ -887,13 +917,118 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     btn.disabled = false;
   });
 
+  /* ---------- usage report (admin) ---------- */
+  var rpMode = 'month', rpRows = [], rpTitle = '';
+  var TH_M = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var ST_TH = {approved:'อนุมัติแล้ว', pending:'รออนุมัติ', rejected:'ไม่อนุมัติ', cancelled:'ยกเลิก'};
+  function rpSay(t, kind){ var m = $('#rpMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
+  function rpInit(){
+    var now = new Date(), y = now.getFullYear();
+    $('#rp-month').value = y + '-' + pad(now.getMonth()+1);
+    var ys = ''; for(var k = y; k >= y-5; k--) ys += '<option value="'+k+'">'+(k+543)+'</option>';
+    $('#rp-year').innerHTML = ys;
+  }
+  function rpSetMode(m){
+    rpMode = m;
+    $('#rpMonth').setAttribute('aria-pressed', m === 'month' ? 'true' : 'false'); $('#rpYear').setAttribute('aria-pressed', m === 'year' ? 'true' : 'false');
+    $('#rpMonthWrap').hidden = m !== 'month'; $('#rpYearWrap').hidden = m !== 'year';
+    loadReport();
+  }
+  function rpStatus(r){ return r.cancelled ? 'cancelled' : ((r.decisions && r.decisions.status) || 'pending'); }
+  async function loadReport(){
+    if(!sb || auth !== 'in' || !canEdit) return;
+    var from, to, ym = $('#rp-month').value, yr = parseInt($('#rp-year').value, 10);
+    if(rpMode === 'month'){
+      if(!ym) return;
+      var p = ym.split('-'), y = +p[0], m = +p[1];
+      from = ym + '-01'; to = ym + '-' + pad(new Date(y, m, 0).getDate());
+      rpTitle = TH_M[m-1] + ' ' + (y+543);
+    } else { from = yr + '-01-01'; to = yr + '-12-31'; rpTitle = 'ปี ' + (yr+543); }
+    rpSay('กำลังโหลด…'); $('#rpCsv').disabled = true;
+    var r = await sb.from('bookings').select(BCOLS + ',decisions(status)').gte('date', from).lte('date', to).order('date').order('start_slot').limit(5000);
+    if(r.error){ rpSay('โหลดรายงานไม่ได้ ลองใหม่อีกครั้ง','err'); return; }
+    rpSay('');
+    rpRows = r.data.map(function(x){ var b = fromRow(x); b.status = rpStatus(x); return b; });
+    renderReport();
+  }
+  function rpTable(title, rows, unit){
+    var sec = el('div','rsec'); sec.appendChild(el('h3',null,title));
+    if(!rows.length){ sec.appendChild(el('p','sub','ไม่มีข้อมูล')); return sec; }
+    var max = Math.max.apply(null, rows.map(function(x){ return x.n; })) || 1, ul = el('ul','rtbl');
+    rows.forEach(function(x){
+      var li = el('li'); li.appendChild(el('span','nm',x.label));
+      var bar = el('span','bar'), i = el('i'); i.style.width = Math.round(x.n / max * 100) + '%'; bar.appendChild(i); li.appendChild(bar);
+      li.appendChild(el('span','v', x.n + ' ' + unit + (x.h != null ? ' · ' + x.h + ' ชม.' : ''))); ul.appendChild(li);
+    });
+    sec.appendChild(ul); return sec;
+  }
+  function tally(list, keyFn){
+    var m = {}, order = [];
+    list.forEach(function(b){ keyFn(b).forEach(function(k){ if(!m[k]){ m[k] = {label:k, n:0, hs:0}; order.push(k); } m[k].n++; m[k].hs += (b.end - b.start); }); });
+    return order.map(function(k){ return {label:k, n:m[k].n, h:m[k].hs / 2}; });
+  }
+  function renderReport(){
+    var body = $('#rpBody'); body.innerHTML = '';
+    var ap = rpRows.filter(function(b){ return b.status === 'approved'; });
+    var cnt = {approved:0, pending:0, rejected:0, cancelled:0}; rpRows.forEach(function(b){ cnt[b.status]++; });
+    var hrs = ap.reduce(function(a,b){ return a + (b.end - b.start); }, 0) / 2;
+    var ppl = ap.reduce(function(a,b){ return a + (b.count || 0); }, 0);
+    $('#rpCsv').disabled = !rpRows.length;
+    var k = el('div','kpis');
+    [[ap.length,'การจองที่อนุมัติ (รายการ)'],[hrs,'ชั่วโมงใช้งานรวม'],[ppl,'ผู้เข้าร่วมรวม (คน)'],[cnt.pending,'รออนุมัติ'],[cnt.rejected + cnt.cancelled,'ไม่อนุมัติ/ยกเลิก']].forEach(function(x){
+      var d = el('div','kpi'); d.appendChild(el('b',null,String(x[0]))); d.appendChild(el('span',null,x[1])); k.appendChild(d);
+    });
+    body.appendChild(el('h3',null,'สรุป ' + rpTitle)); body.appendChild(k);
+    if(!rpRows.length){ body.appendChild(el('p','sub','ไม่มีรายการจองในช่วงนี้')); return; }
+
+    var rows;
+    if(rpMode === 'year'){
+      rows = []; for(var m = 0; m < 12; m++){ var key = $('#rp-year').value + '-' + pad(m+1), l = ap.filter(function(b){ return b.date.slice(0,7) === key; });
+        rows.push({label:TH_M[m], n:l.length, h:l.reduce(function(a,b){ return a + (b.end - b.start); }, 0) / 2}); }
+      body.appendChild(rpTable('แยกตามเดือน', rows, 'รายการ'));
+    } else {
+      var days = new Date(+$('#rp-month').value.slice(0,4), +$('#rp-month').value.slice(5), 0).getDate();
+      rows = []; for(var d = 1; d <= days; d++){ var ds = $('#rp-month').value + '-' + pad(d), l2 = ap.filter(function(b){ return b.date === ds; });
+        if(l2.length) rows.push({label:'วันที่ ' + d, n:l2.length, h:l2.reduce(function(a,b){ return a + (b.end - b.start); }, 0) / 2}); }
+      body.appendChild(rpTable('แยกตามวัน', rows, 'รายการ'));
+    }
+    function sortDesc(a){ return a.sort(function(x,y){ return y.n - x.n; }); }
+    body.appendChild(rpTable('แยกตามห้อง', sortDesc(tally(ap, function(b){ return [(b.buildingShort ? b.buildingShort + ' ' : '') + (b.roomName || b.room)]; })), 'รายการ'));
+    body.appendChild(rpTable('แยกตามหน่วยงาน', sortDesc(tally(ap, function(b){ return [b.unit || 'ไม่ระบุ']; })), 'รายการ'));
+    body.appendChild(rpTable('แยกตามผู้จอง', sortDesc(tally(ap, function(b){ return [b.name || 'ไม่ระบุ']; })).slice(0,10), 'รายการ'));
+    body.appendChild(rpTable('อุปกรณ์ที่ใช้', sortDesc(tally(ap, function(b){ return eqList(b).map(function(n){ return n.replace(/ \(.*\)$/, ''); }); })), 'ครั้ง'));
+    var meals = []; [['coffeeAM','กาแฟ/เบรกเช้า'],['lunch','อาหารกลางวัน'],['coffeePM','กาแฟ/เบรกบ่าย']].forEach(function(x){ var n = ap.filter(function(b){ return b[x[0]]; }).length; if(n) meals.push({label:x[1], n:n}); });
+    body.appendChild(rpTable('อาหารและเครื่องดื่ม', meals, 'ครั้ง'));
+    var st = ['approved','pending','rejected','cancelled'].map(function(x){ return {label:ST_TH[x], n:cnt[x]}; }).filter(function(x){ return x.n; });
+    body.appendChild(rpTable('สถานะคำขอทั้งหมด', st, 'รายการ'));
+  }
+  function csvCell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+  $('#rpCsv').addEventListener('click', function(){
+    var head = ['วันที่','เวลา','อาคาร','ห้อง','หัวข้อ','หน่วยงาน','ผู้จอง','จำนวนผู้เข้าร่วม','อุปกรณ์','อาหารและเครื่องดื่ม','สถานะ'];
+    var lines = [head].concat(rpRows.map(function(b){
+      var meals = [b.coffeeAM && 'กาแฟเช้า', b.lunch && 'อาหารกลางวัน', b.coffeePM && 'กาแฟบ่าย'].filter(Boolean).join(' / ');
+      return [b.date, tl(b.start) + '-' + tl(b.end), b.buildingShort, b.roomName || b.room, b.title, b.unit, b.name, b.count, eqList(b).join(' / '), meals, ST_TH[b.status]];
+    })).map(function(r){ return r.map(csvCell).join(','); });
+    var blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'รายงานการใช้ห้อง-' + (rpMode === 'month' ? $('#rp-month').value : $('#rp-year').value) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  });
+  rpInit();
+  $('#rpMonth').addEventListener('click', function(){ rpSetMode('month'); });
+  $('#rpYear').addEventListener('click', function(){ rpSetMode('year'); });
+  $('#rp-month').addEventListener('change', loadReport);
+  $('#rp-year').addEventListener('change', loadReport);
+
   function setAdminTab(name){
-    var u = name !== 'venues';
-    $('#secUsers').hidden = !u; $('#secVenues').hidden = u;
-    $('#atUsers').setAttribute('aria-selected', u ? 'true' : 'false'); $('#atVenues').setAttribute('aria-selected', u ? 'false' : 'true');
+    [['users','Users'],['venues','Venues'],['report','Report']].forEach(function(t){
+      var on = t[0] === name; $('#sec' + t[1]).hidden = !on; $('#at' + t[1]).setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    if(name === 'report') loadReport();
   }
   $('#atUsers').addEventListener('click', function(){ setAdminTab('users'); });
   $('#atVenues').addEventListener('click', function(){ setAdminTab('venues'); });
+  $('#atReport').addEventListener('click', function(){ setAdminTab('report'); });
 
   /* ---------- page shell ---------- */
   function renderBanner(){
