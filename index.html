@@ -290,6 +290,21 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         <div class="acts"><button class="btn primary" id="uAdd" type="submit">เพิ่มผู้ใช้</button></div>
         <p class="msg" id="uMsg" role="status" aria-live="polite"></p>
       </form>
+      <div class="imp stack" id="impBox" style="gap:10px;border-top:1px solid var(--line);padding-top:14px">
+        <h3>นำเข้าผู้ใช้จากไฟล์ Excel</h3>
+        <p class="sub">เพิ่มได้ครั้งละหลายคน (สูงสุด 200 รายการ) ไฟล์ต้องมีหัวคอลัมน์: ชื่อ-นามสกุล, หน่วยงาน, อีเมล, รหัสผ่าน (อย่างน้อย 8 ตัวอักษร) และ ผู้ดูแล (ใส่ "ใช่" ถ้าให้สิทธิ์ผู้ดูแล เว้นว่างถ้าไม่ให้)</p>
+        <div class="acts">
+          <button class="btn sm" id="impTpl" type="button">ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <label class="btn sm" for="impFile" style="cursor:pointer">เลือกไฟล์ Excel / CSV</label>
+          <input id="impFile" type="file" accept=".xlsx,.xls,.csv" hidden>
+        </div>
+        <p class="msg" id="impMsg" role="status" aria-live="polite"></p>
+        <ul class="list" id="impList"></ul>
+        <div class="acts" id="impActs" hidden>
+          <button class="btn primary" id="impGo" type="button">นำเข้า</button>
+          <button class="btn" id="impClear" type="button">ล้างรายการ</button>
+        </div>
+      </div>
       <ul class="list" id="uList"></ul>
     </section>
 
@@ -335,6 +350,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function(){
   var N = 28; /* 30-minute slots from 07:00; 28 slots end at 21:00 */
@@ -1011,6 +1027,104 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   $('#rpYear').addEventListener('click', function(){ rpSetMode('year'); });
   $('#rp-month').addEventListener('change', loadReport);
   $('#rp-year').addEventListener('change', loadReport);
+
+  /* ---------- bulk import from Excel (admin) ---------- */
+  var impRows = [];
+  function impSay(t, kind){ var m = $('#impMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
+  var IMP_KEYS = {
+    name:['ชื่อ-นามสกุล','ชื่อนามสกุล','ชื่อ','name','fullname','full_name'],
+    unit:['หน่วยงาน','unit'],
+    email:['อีเมล','อีเมลสถาบัน','email','e-mail'],
+    password:['รหัสผ่าน','รหัสผ่านเริ่มต้น','password'],
+    admin:['ผู้ดูแล','สิทธิ์ผู้ดูแล','admin']
+  };
+  function impPick(row, key){
+    var want = IMP_KEYS[key];
+    for(var h in row){ var n = String(h).replace(/\s+/g,'').toLowerCase(); if(want.indexOf(n) >= 0) return String(row[h] == null ? '' : row[h]).trim(); }
+    return '';
+  }
+  function impUnit(v){
+    if(!v) return '';
+    var names = UNITS.map(function(u){ return u.n; });
+    if(names.indexOf(v) >= 0) return v;
+    var hit = names.filter(function(n){ return n.replace(/\s+/g,'') === v.replace(/\s+/g,''); });
+    return hit[0] || null;
+  }
+  function impCheck(r){
+    var err = [];
+    if(!r.name) err.push('ไม่มีชื่อ');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) err.push('อีเมลไม่ถูกต้อง');
+    if(r.password.length < 8) err.push('รหัสผ่านสั้นกว่า 8 ตัว');
+    if(r.unit === null) err.push('ไม่พบหน่วยงานในรายการ');
+    else if(!r.unit) err.push('ไม่มีหน่วยงาน');
+    return err;
+  }
+  function impRender(){
+    var ul = $('#impList'); ul.innerHTML = '';
+    impRows.forEach(function(r){
+      var li = el('li','item'), row = el('div','row');
+      row.appendChild(el('span','mono', r.name || '(ไม่มีชื่อ)'));
+      var st = r.result ? (r.result === 'ok' ? ['approved','เพิ่มแล้ว'] : ['rejected',r.result]) : (r.err.length ? ['rejected','ข้อมูลไม่ถูกต้อง'] : ['pending','พร้อมนำเข้า']);
+      row.appendChild(el('span','chip '+st[0], st[1])); li.appendChild(row);
+      li.appendChild(lineP('อีเมล', r.email || '-'));
+      li.appendChild(lineP('หน่วยงาน', r.unitRaw || '-'));
+      if(r.admin) li.appendChild(lineP('สิทธิ์', 'ผู้ดูแล'));
+      if(r.err.length && !r.result) li.appendChild(el('div','sub','⚠ ' + r.err.join(' · ')));
+      ul.appendChild(li);
+    });
+    var ready = impRows.filter(function(r){ return !r.err.length && !r.result; }).length;
+    $('#impActs').hidden = !impRows.length;
+    $('#impGo').textContent = 'นำเข้า ' + ready + ' รายการ'; $('#impGo').disabled = !ready;
+  }
+  function impLoad(file){
+    impSay(''); impRows = []; impRender();
+    if(!window.XLSX){ impSay('โหลดตัวอ่าน Excel ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่','err'); return; }
+    var fr = new FileReader();
+    fr.onload = function(){
+      try{
+        var wb = XLSX.read(fr.result, {type:'array'});
+        var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:'', raw:false});
+        rows = rows.filter(function(r){ return Object.keys(r).some(function(k){ return String(r[k]).trim() !== ''; }); });
+        if(!rows.length){ impSay('ไม่พบข้อมูลในไฟล์','err'); return; }
+        if(rows.length > 200){ impSay('ไฟล์มี ' + rows.length + ' แถว ครั้งหนึ่งนำเข้าได้ไม่เกิน 200 รายการ','err'); return; }
+        var seen = {};
+        impRows = rows.map(function(r){
+          var o = {name:impPick(r,'name'), unitRaw:impPick(r,'unit'), email:impPick(r,'email').toLowerCase(), password:impPick(r,'password'),
+            admin:['ใช่','yes','y','true','1','admin','ผู้ดูแล'].indexOf(impPick(r,'admin').toLowerCase()) >= 0};
+          o.unit = impUnit(o.unitRaw); o.err = impCheck(o);
+          if(o.email){ if(seen[o.email]) o.err.push('อีเมลซ้ำในไฟล์'); seen[o.email] = true; }
+          return o;
+        });
+        var bad = impRows.filter(function(r){ return r.err.length; }).length;
+        impSay('อ่านไฟล์ได้ ' + impRows.length + ' รายการ' + (bad ? ' · มี ' + bad + ' รายการที่ต้องแก้ไขในไฟล์ (รายการนั้นจะไม่ถูกนำเข้า)' : ''), bad ? 'err' : 'good');
+        impRender();
+      }catch(e){ impSay('อ่านไฟล์ไม่ได้ ตรวจสอบว่าเป็นไฟล์ Excel หรือ CSV','err'); }
+    };
+    fr.readAsArrayBuffer(file);
+  }
+  $('#impFile').addEventListener('change', function(){ var f = this.files[0]; this.value = ''; if(f) impLoad(f); });
+  $('#impClear').addEventListener('click', function(){ impRows = []; impSay(''); impRender(); });
+  $('#impTpl').addEventListener('click', function(){
+    if(!window.XLSX){ impSay('โหลดตัวอ่าน Excel ไม่ได้','err'); return; }
+    var ws = XLSX.utils.aoa_to_sheet([['ชื่อ-นามสกุล','หน่วยงาน','อีเมล','รหัสผ่าน','ผู้ดูแล'],
+      ['สมชาย ใจดี', UNITS[0].n, 'somchai@stin.ac.th', 'Pass1234', ''], ['สมหญิง รักเรียน', UNITS[1].n, 'somying@stin.ac.th', 'Pass5678', 'ใช่']]);
+    ws['!cols'] = [{wch:24},{wch:34},{wch:28},{wch:16},{wch:10}];
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'ผู้ใช้'); XLSX.writeFile(wb, 'ไฟล์ตัวอย่างนำเข้าผู้ใช้.xlsx');
+  });
+  $('#impGo').addEventListener('click', async function(){
+    var todo = impRows.filter(function(r){ return !r.err.length && !r.result; });
+    if(!todo.length) return;
+    this.disabled = true; $('#impClear').disabled = true;
+    var ok = 0, fail = 0;
+    for(var i = 0; i < todo.length; i++){
+      var r = todo[i]; impSay('กำลังนำเข้า ' + (i+1) + ' / ' + todo.length + ' …');
+      try{ await callUsers({action:'create', email:r.email, password:r.password, full_name:r.name, unit:r.unit, admin:r.admin}); r.result = 'ok'; ok++; }
+      catch(e){ r.result = e.message; fail++; }
+    }
+    impSay('นำเข้าสำเร็จ ' + ok + ' รายการ' + (fail ? ' · ไม่สำเร็จ ' + fail + ' รายการ (ดูเหตุผลในรายการด้านล่าง)' : ''), fail ? 'err' : 'good');
+    impRows.forEach(function(r){ r.password = ''; });
+    $('#impClear').disabled = false; impRender(); await loadUsers();
+  });
 
   function setAdminTab(name){
     [['users','Users'],['venues','Venues'],['report','Report']].forEach(function(t){
