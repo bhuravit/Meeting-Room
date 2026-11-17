@@ -137,6 +137,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .item.hu{border-left:4px solid hsl(var(--h) 55% var(--u-bd))}
 .sw.u{background:hsl(var(--h) var(--u-bgs) var(--u-bg));border-color:hsl(var(--h) 55% var(--u-bd))}
 .sw.u.none{background:var(--off-bg);border-color:var(--line)}
+.bk.draft{pointer-events:none;z-index:2;border-style:dotted;border-width:2px;box-shadow:0 0 0 2px var(--surface),0 2px 10px rgba(0,0,0,.18)}
+.bk.draft.nounit{background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--ink);border-color:var(--accent)}
 .bk.sel{outline:2px solid var(--accent);outline-offset:1px}
 .layout.guest{grid-template-columns:minmax(0,1fr)}
 .side{display:flex;flex-direction:column;gap:18px;min-width:0}
@@ -568,7 +570,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     ['f-cm','f-ca','f-lunch'].forEach(function(n){ document.querySelector('input[name='+n+'][value="0"]').checked = true; });
     Array.prototype.forEach.call(document.querySelectorAll('input[name=f-eq]'), function(c){ c.checked = false; });
     $('#f-on-wrap').hidden = true;
-    $('#f-start').value = 4; $('#f-end').value = 8; $('#f-date').value = date;
+    $('#f-start').value = 4; $('#f-end').value = 8; $('#f-date').value = date; draftOn = false;
     say('');
   }
 
@@ -583,7 +585,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   $('#f-bld').addEventListener('change', function(){ syncRooms(); curB = $('#f-bld').value; render(); });
   $('#f-start').addEventListener('change', function(){
     var s = +$('#f-start').value; if(+$('#f-end').value <= s) $('#f-end').value = Math.min(N, s+2);
+    draftOn = true; render();
   });
+  ['f-room','f-end','f-unit'].forEach(function(id){ $('#'+id).addEventListener('change', function(){ draftOn = true; render(); }); });
   $('#f-date').addEventListener('change', function(){ if($('#f-date').value){ date = $('#f-date').value; render(); } });
 
   $('#form').addEventListener('submit', async function(ev){
@@ -634,6 +638,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     });
   }
 
+  var draftOn = false; /* the preview shows once the user starts choosing a time, not for the form's default values */
   function renderGrid(){
     var g = $('#grid'); g.innerHTML = '';
     var rooms = bOf(curB).rooms;
@@ -660,7 +665,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           if(auth === 'guest'){ pending = {b:curB, room:room.id, date:date, i:i}; auth = 'out'; route(); loginSay('กรุณาเข้าสู่ระบบก่อนจอง ' + room.name + ' เวลา ' + tl(i) + ' น.'); return; }
           $('#f-bld').value = curB; syncRooms(); $('#f-room').value = room.id; $('#f-date').value = date;
           $('#f-start').value = i; $('#f-end').value = Math.min(N, i+2); /* start = clicked slot, end = start + 1 hour (2 slots) */
-          $('#f-title').focus();
+          draftOn = true; render(); $('#f-title').focus();
         });
         g.appendChild(c);
       });
@@ -677,6 +682,17 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       k.addEventListener('click', function(){ openDetail(b.id); });
       g.appendChild(k);
     });
+    /* live preview of the time range being chosen in the booking form, tinted with the chosen unit's color */
+    if(draftOn && !$('.side').hidden){
+      var dr = bOf($('#f-bld').value), dci = dr ? dr.rooms.map(function(r){ return r.id; }).indexOf($('#f-room').value) : -1;
+      var ds = parseInt($('#f-start').value, 10), de = parseInt($('#f-end').value, 10);
+      if($('#f-date').value === date && $('#f-bld').value === curB && dci >= 0 && ds >= 0 && de > ds){
+        var du = $('#f-unit').value, dk = el('div','bk draft'); dk.style.gridColumn = String(dci+2); dk.style.gridRow = (ds+2)+' / '+(de+2);
+        dk.appendChild(el('b',null,tl(ds)+'–'+tl(de)));
+        dk.appendChild(el('span',null,(du || 'เลือกหน่วยงานเพื่อกำหนดสี')));
+        paint(dk, du); g.appendChild(dk);
+      }
+    }
     $('#dayEmpty').hidden = day.length > 0 || local;
     renderLegend(day);
   }
