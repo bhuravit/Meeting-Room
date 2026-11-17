@@ -40,7 +40,10 @@ h1,h2,h3{font-family:var(--f-head);font-weight:500;margin:0;text-wrap:balance}
 h1{font-size:26px;line-height:1.25}
 h2{font-size:18px}
 h3{font-size:15px}
-.vm{margin:2px 0 4px}
+.vm{margin:0}
+.vmrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 4px}
+label.rf{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:13px;min-width:0}
+.rf select{width:auto;max-width:min(100%,420px)}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(128px,1fr));border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));min-width:900px}
 .cal .ch{padding:6px 8px;text-align:center;font-size:13px;font-weight:600;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 20%,var(--surface));border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;color:var(--ink);font-family:inherit}
 .cal .ch small{display:block;font-weight:400;color:var(--muted)}
@@ -249,10 +252,13 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           <span id="hintClick">คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด</span>
         </div>
       </div>
-      <div class="seg vm" role="group" aria-label="รูปแบบการแสดงตาราง">
-        <button type="button" class="btn sm" id="vmDay" aria-pressed="true">รายวัน</button>
-        <button type="button" class="btn sm" id="vmWeek" aria-pressed="false">รายสัปดาห์</button>
-        <button type="button" class="btn sm" id="vmMonth" aria-pressed="false">รายเดือน</button>
+      <div class="vmrow">
+        <div class="seg vm" role="group" aria-label="รูปแบบการแสดงตาราง">
+          <button type="button" class="btn sm" id="vmDay" aria-pressed="true">รายวัน</button>
+          <button type="button" class="btn sm" id="vmWeek" aria-pressed="false">รายสัปดาห์</button>
+          <button type="button" class="btn sm" id="vmMonth" aria-pressed="false">รายเดือน</button>
+        </div>
+        <label class="rf" id="rfWrap" hidden>ห้องประชุม <select id="roomFilter" aria-label="เลือกห้องประชุม"></select></label>
       </div>
       <div class="tabs" id="tabs" role="tablist" aria-label="เลือกอาคาร"></div>
       <div class="scroll" id="dayScroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
@@ -623,7 +629,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       btn.setAttribute('aria-selected', b.id === curB ? 'true' : 'false');
       btn.appendChild(document.createTextNode(b.name));
       btn.appendChild(el('small',null, b.rooms.length+' ห้อง · '+(vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้')+'มีจอง '+n+' รายการ'));
-      btn.addEventListener('click', function(){ curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
+      btn.addEventListener('click', function(){ if(roomFilter && roomFilter.split('|')[0] !== b.id) roomFilter = ''; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
       t.appendChild(btn);
     });
   }
@@ -688,7 +694,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
 
   /* ---------- week / month views ---------- */
-  var vmode = 'day', WD = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  var roomFilter = '', vmode = 'day', WD = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
   function monthStart(x){ return x.slice(0,8) + '01'; }
   function weekStart(x){ var d = parse(x); d.setDate(d.getDate() - d.getDay()); return iso(d); }
   function monthEnd(x){ var d = parse(monthStart(x)); d.setMonth(d.getMonth() + 1); d.setDate(0); return iso(d); }
@@ -723,10 +729,28 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     return k;
   }
   function goDay(d){ date = d; vmode = 'day'; $('#f-date').value = date; render(); }
+  function renderRoomFilter(){
+    var sel = $('#roomFilter'); sel.innerHTML = '';
+    var all0 = el('option', null, 'ทุกห้อง (อาคารที่เลือก)'); all0.value = ''; sel.appendChild(all0);
+    var ok = false;
+    BUILDINGS.forEach(function(b){
+      var g = el('optgroup'); g.label = b.name;
+      b.rooms.forEach(function(r){ var o = el('option', null, r.name); o.value = b.id + '|' + r.id; if(o.value === roomFilter) ok = true; g.appendChild(o); });
+      sel.appendChild(g);
+    });
+    if(!ok) roomFilter = '';
+    sel.value = roomFilter;
+  }
+  $('#roomFilter').addEventListener('change', function(){
+    roomFilter = this.value;
+    if(roomFilter){ var bid = roomFilter.split('|')[0]; if(bid !== curB && findB(bid)){ curB = bid; $('#f-bld').value = bid; syncRooms(); } }
+    render();
+  });
   function renderAlt(){
     var v = $('#altView'); v.innerHTML = '';
     var r = rangeOf(), today = todayStr();
     var list = all.filter(function(b){ return b.building === curB && b.date >= r[0] && b.date <= r[1] && blocking(b); })
+                  .filter(function(b){ return !roomFilter || b.room === roomFilter.split('|')[1]; })
                   .sort(function(a,b){ return a.date.localeCompare(b.date) || a.start - b.start; });
     var by = {}; list.forEach(function(b){ (by[b.date] = by[b.date] || []).push(b); });
     var cal = el('div','cal' + (vmode === 'month' ? ' mo' : '')); cal.style.setProperty('--tb', bcol(bOf(curB)).bg);
@@ -1296,6 +1320,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#next').textContent = (vmode === 'week' ? 'สัปดาห์ถัดไป' : vmode === 'month' ? 'เดือนถัดไป' : 'วันถัดไป') + ' ›';
     $('#today').textContent = vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้';
     renderTabs();
+    $('#rfWrap').hidden = dm;
+    if(!dm) renderRoomFilter();
     if(dm) renderGrid(); else renderAlt();
     renderDetail();
     $('#submit').disabled = !canWrite && !local;
