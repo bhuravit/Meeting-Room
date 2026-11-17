@@ -42,6 +42,10 @@ h2{font-size:18px}
 h3{font-size:15px}
 .brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .brand h1{margin:0}
+body.gated .top{justify-content:center}
+body.gated .brand{justify-content:center;flex-direction:column;gap:10px;text-align:center}
+body.gated .login h2,body.gated .login p{text-align:center}
+body.gated .login .acts{justify-content:center}
 .logo{height:56px;width:auto;background:#fff;border-radius:10px;padding:4px 8px;display:block}
 .top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
 .nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -1167,6 +1171,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   function route(){
     var gate = gated(), guest = auth === 'guest', viewOnly = guest; /* guests see the timetable only; signed-in users (admins included) can book */
     view = (!gate && location.hash === '#admin' && canEdit) ? 'admin' : 'main';
+    document.body.classList.toggle('gated', gate);
     $('#viewLogin').hidden = !gate;
     $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin';
     $('#viewMain').classList.toggle('guest', viewOnly); $('.side').hidden = viewOnly;
