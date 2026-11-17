@@ -148,7 +148,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .form h2{grid-column:1/-1}
 .msg{grid-column:1/-1;min-height:20px;margin:0;font-size:13px}
 .msg.err{color:var(--err)}
-.msg.good{color:var(--ok)}
+.msg.good{color:var(--ok);font-weight:600;font-size:14px}
+.btn.primary.done,.btn.primary.done:hover{background:#1B8A5A;border-color:#1B8A5A;color:#fff}
 .list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
 .item{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .item.sel{border-color:var(--accent)}
@@ -533,6 +534,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       await loadAll();
     }catch(e){ say('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
   }
+  var doneTimer = null;
   function say(text, kind){ var m = view === 'admin' ? $('#cfgMsg') : $('#msg'); m.textContent = text; m.className = 'msg ' + (kind||''); }
 
   /* ---------- booking form ---------- */
@@ -618,7 +620,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       if(r.error){ say(r.error,'err'); }
       else{
         resetForm(); applyProfile();
-        say('ส่งคำขอแล้ว สถานะ: รอการอนุมัติ','good');
+        say('✓ จองสำเร็จ','good');
+        var sb2 = $('#submit'); sb2.classList.add('done'); sb2.textContent = '✓ จองสำเร็จ';
+        clearTimeout(doneTimer); doneTimer = setTimeout(function(){ sb2.classList.remove('done'); sb2.textContent = 'ส่งคำขอจอง'; say(''); }, 4000);
         date = b.date; curB = b.building; render();
       }
     }catch(e){ say('ส่งคำขอไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
