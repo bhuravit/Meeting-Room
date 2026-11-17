@@ -40,7 +40,9 @@ h1,h2,h3{font-family:var(--f-head);font-weight:500;margin:0;text-wrap:balance}
 h1{font-size:26px;line-height:1.25}
 h2{font-size:18px}
 h3{font-size:15px}
-.eyebrow{margin:0 0 2px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand h1{margin:0}
+.logo{height:56px;width:auto;background:#fff;border-radius:10px;padding:4px 8px;display:block}
 .top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
 .nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -177,8 +179,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 <body>
 <div class="wrap">
   <header class="top">
-    <div>
-      <p class="eyebrow" id="eyebrow"></p>
+    <div class="brand">
+      <img class="logo" src="logo.png" alt="โลโก้สถาบันพระบรมราชชนก สภากาชาดไทย ศรีสวรินทิรา" width="154" height="65">
       <h1 id="pageTitle">ระบบจองห้องประชุม</h1>
     </div>
     <nav class="nav" aria-label="เมนู">
@@ -1158,7 +1160,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
   function renderLogin(){
     var chk = auth === 'checking';
-    $('#eyebrow').textContent = '';
     $('#loginStatus').hidden = !chk; $('#loginStatus').textContent = 'กำลังตรวจสอบบัญชีของคุณ…';
     $('#loginForm').hidden = chk;
     $('#backGuest').hidden = chk || !sb;
@@ -1181,7 +1182,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   function render(){
     if(gated()){ closeDetail(true); renderBanner(); renderLogin(); return; }
     var total = BUILDINGS.reduce(function(n,b){ return n + b.rooms.length; }, 0);
-    $('#eyebrow').textContent = BUILDINGS.length + ' อาคาร · ' + total + ' ห้องประชุม';
     var pc = pendingCount();
     renderBanner();
     if(view === 'admin'){ closeDetail(true); if(!dirty) renderCfg(); return; }
