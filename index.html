@@ -40,6 +40,20 @@ h1,h2,h3{font-family:var(--f-head);font-weight:500;margin:0;text-wrap:balance}
 h1{font-size:26px;line-height:1.25}
 h2{font-size:18px}
 h3{font-size:15px}
+.vm{margin:2px 0 4px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(128px,1fr));border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));min-width:900px}
+.cal .ch{padding:6px 8px;text-align:center;font-size:13px;font-weight:600;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 20%,var(--surface));border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;color:var(--ink);font-family:inherit}
+.cal .ch small{display:block;font-weight:400;color:var(--muted)}
+.cal .ch.today{box-shadow:inset 0 -3px 0 var(--accent)}
+.cal .cc{border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:3px;min-height:150px;min-width:0}
+.cal.mo .cc{min-height:112px}
+.cal .cc.dim{background:var(--off-bg);opacity:.55}
+.cal .cc .dn{align-self:flex-start;border:0;background:transparent;font:inherit;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;padding:1px 6px;border-radius:10px}
+.cal .cc .dn:hover{background:var(--hover)}
+.cal .cc.today .dn{background:var(--accent);color:var(--accent-ink)}
+.cal .bk{margin:0;min-height:0;font-size:11.5px;flex:none;width:100%}
+.cal .more{border:0;background:transparent;font:inherit;font-size:11.5px;color:var(--muted);text-align:left;cursor:pointer;padding:0 4px}
+.cal .none{font-size:11.5px;color:var(--muted);padding:0 4px}
 .brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .brand h1{margin:0}
 body.gated .top{justify-content:center}
@@ -235,8 +249,14 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           <span id="hintClick">คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด</span>
         </div>
       </div>
+      <div class="seg vm" role="group" aria-label="รูปแบบการแสดงตาราง">
+        <button type="button" class="btn sm" id="vmDay" aria-pressed="true">รายวัน</button>
+        <button type="button" class="btn sm" id="vmWeek" aria-pressed="false">รายสัปดาห์</button>
+        <button type="button" class="btn sm" id="vmMonth" aria-pressed="false">รายเดือน</button>
+      </div>
       <div class="tabs" id="tabs" role="tablist" aria-label="เลือกอาคาร"></div>
-      <div class="scroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
+      <div class="scroll" id="dayScroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
+      <div class="scroll" id="altScroll" hidden><div id="altView"></div></div>
       <div class="legend units" id="unitLegend" aria-label="สีของหน่วยงาน" hidden></div>
       <p class="empty" id="dayEmpty" hidden>ยังไม่มีการจองในวันนี้ คลิกช่องว่างในตารางเพื่อจองห้อง</p>
     </section>
@@ -597,12 +617,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   function renderTabs(){
     var t = $('#tabs'); t.innerHTML = '';
     BUILDINGS.forEach(function(b){
-      var n = all.filter(function(x){ return x.building === b.id && x.date === date && blocking(x); }).length;
+      var rg = rangeOf(), n = all.filter(function(x){ return x.building === b.id && x.date >= rg[0] && x.date <= rg[1] && blocking(x); }).length;
       var btn = el('button','tab'); btn.type = 'button'; btn.setAttribute('role','tab');
       btn.style.setProperty('--tb', bcol(b).bg); btn.style.setProperty('--tf', bcol(b).fg);
       btn.setAttribute('aria-selected', b.id === curB ? 'true' : 'false');
       btn.appendChild(document.createTextNode(b.name));
-      btn.appendChild(el('small',null, b.rooms.length+' ห้อง · วันนี้มีจอง '+n+' รายการ'));
+      btn.appendChild(el('small',null, b.rooms.length+' ห้อง · '+(vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้')+'มีจอง '+n+' รายการ'));
       btn.addEventListener('click', function(){ curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
       t.appendChild(btn);
     });
@@ -652,8 +672,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       g.appendChild(k);
     });
     $('#dayEmpty').hidden = day.length > 0 || local;
+    renderLegend(day);
+  }
+
+  function renderLegend(list){
     var lg = $('#unitLegend'); lg.innerHTML = '';
-    var used = {}; day.forEach(function(b){ used[b.unit || ''] = true; });
+    var used = {}; list.forEach(function(b){ used[b.unit || ''] = true; });
     var names = UNITS.map(function(u){ return u.n; }).filter(function(n){ return used[n]; });
     Object.keys(used).forEach(function(n){ if(n && HUE[n] == null) names.push(n); });
     names.forEach(function(n){
@@ -661,6 +685,78 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       s.appendChild(i); s.appendChild(document.createTextNode(n)); lg.appendChild(s);
     });
     lg.hidden = !names.length;
+  }
+
+  /* ---------- week / month views ---------- */
+  var vmode = 'day', WD = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  function monthStart(x){ return x.slice(0,8) + '01'; }
+  function weekStart(x){ var d = parse(x); d.setDate(d.getDate() - d.getDay()); return iso(d); }
+  function monthEnd(x){ var d = parse(monthStart(x)); d.setMonth(d.getMonth() + 1); d.setDate(0); return iso(d); }
+  function rangeOf(){
+    if(vmode === 'week'){ var a = weekStart(date); return [a, shift(a, 6)]; }
+    if(vmode === 'month') return [monthStart(date), monthEnd(date)];
+    return [date, date];
+  }
+  function shiftView(n){
+    if(vmode === 'week') return shift(date, 7 * n);
+    if(vmode === 'month'){ var d = parse(date), day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n); var last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); d.setDate(Math.min(day, last)); return iso(d); }
+    return shift(date, n);
+  }
+  function viewTitle(){
+    if(vmode === 'week'){ var r = rangeOf(), a = parse(r[0]), b = parse(r[1]);
+      return 'สัปดาห์ ' + a.getDate() + (a.getMonth() !== b.getMonth() ? ' ' + THM[a.getMonth()] : '') + ' – ' + b.getDate() + ' ' + THM[b.getMonth()] + ' พ.ศ. ' + (b.getFullYear() + 543); }
+    if(vmode === 'month'){ var d = parse(date); return 'เดือน' + THM[d.getMonth()] + ' พ.ศ. ' + (d.getFullYear() + 543); }
+    return thDate(date);
+  }
+  function roomShort(b){
+    var r = bOf(b.building).rooms.filter(function(x){ return x.id === b.room; })[0], nm = (r && r.name) || b.roomName || b.room;
+    var m = /\(([^)]+)\)\s*$/.exec(nm); return m ? 'ห้อง ' + m[1] : nm;
+  }
+  function chip(b){
+    var k = el('button','bk ' + b.status + (selected === b.id ? ' sel' : '')); k.type = 'button';
+    k.appendChild(el('b',null, tl(b.start) + '–' + tl(b.end) + ' · ' + roomShort(b)));
+    k.appendChild(el('span',null, b.title));
+    if(vmode === 'week' && b.name) k.appendChild(el('span',null,'ผู้จอง: ' + b.name));
+    paint(k, b.unit);
+    k.title = b.title + ' · ' + (b.unit || '') + ' · ผู้จอง: ' + (b.name || '-') + (b.status === 'pending' ? ' · รออนุมัติ' : '');
+    k.addEventListener('click', function(){ openDetail(b.id); });
+    return k;
+  }
+  function goDay(d){ date = d; vmode = 'day'; $('#f-date').value = date; render(); }
+  function renderAlt(){
+    var v = $('#altView'); v.innerHTML = '';
+    var r = rangeOf(), today = todayStr();
+    var list = all.filter(function(b){ return b.building === curB && b.date >= r[0] && b.date <= r[1] && blocking(b); })
+                  .sort(function(a,b){ return a.date.localeCompare(b.date) || a.start - b.start; });
+    var by = {}; list.forEach(function(b){ (by[b.date] = by[b.date] || []).push(b); });
+    var cal = el('div','cal' + (vmode === 'month' ? ' mo' : '')); cal.style.setProperty('--tb', bcol(bOf(curB)).bg);
+    var days = [], cur = vmode === 'month' ? weekStart(r[0]) : r[0], end = vmode === 'month' ? shift(weekStart(r[1]), 6) : r[1];
+    while(cur <= end){ days.push(cur); cur = shift(cur, 1); }
+    if(vmode === 'week'){
+      days.forEach(function(d){
+        var h = el('button','ch' + (d === today ? ' today' : ''), WD[parse(d).getDay()]); h.type = 'button'; h.appendChild(el('small',null, parse(d).getDate() + ' ' + THM[parse(d).getMonth()]));
+        h.addEventListener('click', function(){ goDay(d); }); cal.appendChild(h);
+      });
+      days.forEach(function(d){
+        var c = el('div','cc' + (d === today ? ' today' : '')), items = by[d] || [];
+        if(!items.length) c.appendChild(el('span','none','ว่าง'));
+        items.forEach(function(b){ c.appendChild(chip(b)); });
+        cal.appendChild(c);
+      });
+    } else {
+      WD.forEach(function(w){ cal.appendChild(el('div','ch', w)); });
+      var mon = parse(r[0]).getMonth();
+      days.forEach(function(d){
+        var dd = parse(d), c = el('div','cc' + (d === today ? ' today' : '') + (dd.getMonth() !== mon ? ' dim' : '')), items = by[d] || [];
+        var n = el('button','dn', String(dd.getDate())); n.type = 'button'; n.title = 'ดูรายวัน ' + thDate(d); n.addEventListener('click', function(){ goDay(d); }); c.appendChild(n);
+        items.slice(0,3).forEach(function(b){ c.appendChild(chip(b)); });
+        if(items.length > 3){ var m = el('button','more','+ อีก ' + (items.length - 3) + ' รายการ'); m.type = 'button'; m.addEventListener('click', function(){ goDay(d); }); c.appendChild(m); }
+        cal.appendChild(c);
+      });
+    }
+    v.appendChild(cal);
+    $('#dayEmpty').hidden = true;
+    renderLegend(list);
   }
 
   function actions(b){
@@ -1190,9 +1286,18 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var pc = pendingCount();
     renderBanner();
     if(view === 'admin'){ closeDetail(true); if(!dirty) renderCfg(); return; }
-    $('#dayTitle').textContent = thDate(date);
+    $('#dayTitle').textContent = viewTitle();
     $('#vdate').value = date;
-    renderTabs(); renderGrid(); renderDetail();
+    var dm = vmode === 'day';
+    $('#dayScroll').hidden = !dm; $('#altScroll').hidden = dm;
+    $('#hintClick').textContent = dm ? 'คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด' : 'คลิกการจองเพื่อดูรายละเอียด · คลิกวันที่เพื่อไปมุมมองรายวันแล้วเลือกเวลาจอง';
+    [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).setAttribute('aria-pressed', vmode === m[1] ? 'true' : 'false'); });
+    $('#prev').textContent = '‹ ' + (vmode === 'week' ? 'สัปดาห์ก่อนหน้า' : vmode === 'month' ? 'เดือนก่อนหน้า' : 'วันก่อนหน้า');
+    $('#next').textContent = (vmode === 'week' ? 'สัปดาห์ถัดไป' : vmode === 'month' ? 'เดือนถัดไป' : 'วันถัดไป') + ' ›';
+    $('#today').textContent = vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้';
+    renderTabs();
+    if(dm) renderGrid(); else renderAlt();
+    renderDetail();
     $('#submit').disabled = !canWrite && !local;
   }
   function onVenues(){
@@ -1202,10 +1307,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     render();
   }
 
-  $('#prev').addEventListener('click', function(){ date = shift(date,-1); $('#f-date').value = date; render(); });
-  $('#next').addEventListener('click', function(){ date = shift(date,1); $('#f-date').value = date; render(); });
+  $('#prev').addEventListener('click', function(){ date = shiftView(-1); $('#f-date').value = date; render(); });
+  $('#next').addEventListener('click', function(){ date = shiftView(1); $('#f-date').value = date; render(); });
   $('#today').addEventListener('click', function(){ date = todayStr(); $('#f-date').value = date; render(); });
   $('#vdate').addEventListener('change', function(){ if($('#vdate').value){ date = $('#vdate').value; $('#f-date').value = date; render(); } });
+  [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).addEventListener('click', function(){ vmode = m[1]; render(); }); });
   window.addEventListener('hashchange', route);
 
   /* ---------- start ---------- */
