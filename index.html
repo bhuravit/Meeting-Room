@@ -139,6 +139,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .sw.u.none{background:var(--off-bg);border-color:var(--line)}
 .bk.draft{pointer-events:none;z-index:2;border-style:dotted;border-width:2px;box-shadow:0 0 0 2px var(--surface),0 2px 10px rgba(0,0,0,.18)}
 .bk.draft.nounit{background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--ink);border-color:var(--accent)}
+.pickhint{color:var(--accent);font-weight:600}
 .bk.sel{outline:2px solid var(--accent);outline-offset:1px}
 .layout.guest{grid-template-columns:minmax(0,1fr)}
 .side{display:flex;flex-direction:column;gap:18px;min-width:0}
@@ -570,7 +571,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     ['f-cm','f-ca','f-lunch'].forEach(function(n){ document.querySelector('input[name='+n+'][value="0"]').checked = true; });
     Array.prototype.forEach.call(document.querySelectorAll('input[name=f-eq]'), function(c){ c.checked = false; });
     $('#f-on-wrap').hidden = true;
-    $('#f-start').value = 4; $('#f-end').value = 8; $('#f-date').value = date; draftOn = false;
+    $('#f-start').value = 4; $('#f-end').value = 8; $('#f-date').value = date; draftOn = false; pickEnd = false;
     say('');
   }
 
@@ -582,13 +583,14 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     sel.value = Array.prototype.some.call(sel.options, function(o){ return o.value === v; }) ? v : '';
   }
   $('#f-on').addEventListener('change', function(){ $('#f-on-wrap').hidden = !$('#f-on').checked; });
-  $('#f-bld').addEventListener('change', function(){ syncRooms(); curB = $('#f-bld').value; render(); });
+  $('#f-bld').addEventListener('change', function(){ pickEnd = false; syncRooms(); curB = $('#f-bld').value; render(); });
   $('#f-start').addEventListener('change', function(){
     var s = +$('#f-start').value; if(+$('#f-end').value <= s) $('#f-end').value = Math.min(N, s+2);
-    draftOn = true; render();
+    pickEnd = false; draftOn = true; render();
   });
-  ['f-room','f-end','f-unit'].forEach(function(id){ $('#'+id).addEventListener('change', function(){ draftOn = true; render(); }); });
-  $('#f-date').addEventListener('change', function(){ if($('#f-date').value){ date = $('#f-date').value; render(); } });
+  ['f-room','f-end','f-unit'].forEach(function(id){ $('#'+id).addEventListener('change', function(){ if(id !== 'f-unit') pickEnd = false; draftOn = true; render(); }); });
+  $('#form').addEventListener('focusin', function(ev){ if(ev.target.id === 'f-title' || /^(INPUT|TEXTAREA)$/.test(ev.target.tagName)){ if(pickEnd){ pickEnd = false; render(); } } });
+  $('#f-date').addEventListener('change', function(){ pickEnd = false; if($('#f-date').value){ date = $('#f-date').value; render(); } });
 
   $('#form').addEventListener('submit', async function(ev){
     ev.preventDefault(); say('');
@@ -638,6 +640,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     });
   }
 
+  var pickEnd = false; /* after the first click on the timetable the next click in the same room sets the end time */
   var draftOn = false; /* the preview shows once the user starts choosing a time, not for the form's default values */
   function renderGrid(){
     var g = $('#grid'); g.innerHTML = '';
@@ -663,9 +666,14 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         c.setAttribute('aria-label', room.name+' '+tl(i)+'-'+tl(i+1)+' ว่าง');
         c.addEventListener('click', function(){
           if(auth === 'guest'){ pending = {b:curB, room:room.id, date:date, i:i}; auth = 'out'; route(); loginSay('กรุณาเข้าสู่ระบบก่อนจอง ' + room.name + ' เวลา ' + tl(i) + ' น.'); return; }
+          if(pickEnd && $('#f-bld').value === curB && $('#f-room').value === room.id && $('#f-date').value === date && i >= parseInt($('#f-start').value, 10)){
+            $('#f-end').value = Math.min(N, i + 1); /* the clicked slot is the last slot of the meeting */
+            pickEnd = false; draftOn = true; render(); $('#f-title').focus(); return;
+          }
           $('#f-bld').value = curB; syncRooms(); $('#f-room').value = room.id; $('#f-date').value = date;
+          pickEnd = true;
           $('#f-start').value = i; $('#f-end').value = Math.min(N, i+2); /* start = clicked slot, end = start + 1 hour (2 slots) */
-          draftOn = true; render(); $('#f-title').focus();
+          draftOn = true; render(); /* keep focus on the timetable so the next click can set the end time */
         });
         g.appendChild(c);
       });
@@ -689,6 +697,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       if($('#f-date').value === date && $('#f-bld').value === curB && dci >= 0 && ds >= 0 && de > ds){
         var du = $('#f-unit').value, dk = el('div','bk draft'); dk.style.gridColumn = String(dci+2); dk.style.gridRow = (ds+2)+' / '+(de+2);
         dk.appendChild(el('b',null,tl(ds)+'–'+tl(de)));
+        if(pickEnd) dk.appendChild(el('span',null,'▼ คลิกช่องสุดท้ายของการประชุม'));
         dk.appendChild(el('span',null,(du || 'เลือกหน่วยงานเพื่อกำหนดสี')));
         paint(dk, du); g.appendChild(dk);
       }
@@ -1330,7 +1339,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#vdate').value = date;
     var dm = vmode === 'day';
     $('#dayScroll').hidden = !dm; $('#altScroll').hidden = dm;
-    $('#hintClick').textContent = dm ? 'คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด' : 'คลิกการจองเพื่อดูรายละเอียด · คลิกวันที่เพื่อไปมุมมองรายวันแล้วเลือกเวลาจอง';
+    $('#hintClick').classList.toggle('pickhint', dm && pickEnd && !$('.side').hidden);
+    $('#hintClick').textContent = (dm && pickEnd && !$('.side').hidden) ? 'เลือกเวลาเริ่มแล้ว · คลิกช่องสุดท้ายของการประชุม (ห้องเดิม) เพื่อกำหนดเวลาสิ้นสุด' : dm ? 'คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด' : 'คลิกการจองเพื่อดูรายละเอียด · คลิกวันที่เพื่อไปมุมมองรายวันแล้วเลือกเวลาจอง';
     [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).setAttribute('aria-pressed', vmode === m[1] ? 'true' : 'false'); });
     $('#prev').textContent = '‹ ' + (vmode === 'week' ? 'สัปดาห์ก่อนหน้า' : vmode === 'month' ? 'เดือนก่อนหน้า' : 'วันก่อนหน้า');
     $('#next').textContent = (vmode === 'week' ? 'สัปดาห์ถัดไป' : vmode === 'month' ? 'เดือนถัดไป' : 'วันถัดไป') + ' ›';
