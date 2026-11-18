@@ -548,13 +548,13 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     return {ok:true};
   }
   async function setStatus(id, status){
-    if(local){ all = all.map(function(x){ return x.id===id ? Object.assign({}, x, {status:status}) : x; }); render(); return; }
+    if(local){ all = all.map(function(x){ return x.id===id ? Object.assign({}, x, {status:status}) : x; }); render(); return true; }
     try{
       var r = canEdit ? await sb.from('decisions').upsert({booking_id:id, status:status, decided_by:me, decided_at:new Date().toISOString()})
                       : await sb.from('bookings').update({cancelled:true}).eq('id',id);
       if(r.error) throw r.error;
-      await loadAll();
-    }catch(e){ say('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
+      await loadAll(); return true;
+    }catch(e){ say('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง','err'); return false; }
   }
   var doneTimer = null;
   function say(text, kind){ var m = view === 'admin' ? $('#cfgMsg') : $('#msg'); m.textContent = text; m.className = 'msg ' + (kind||''); }
@@ -866,7 +866,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           if(armed !== key){ armed = key; clearTimeout(armTimer); armTimer = setTimeout(function(){ armed = null; render(); }, 6000); render(); return; }
           armed = null;
         }
-        setStatus(b.id, status);
+        var closeAfter = (status==='rejected' || status==='cancelled');
+        Promise.resolve(setStatus(b.id, status)).then(function(ok){ if(ok && closeAfter) closeDetail(false); });
       });
       box.appendChild(btn);
     }
