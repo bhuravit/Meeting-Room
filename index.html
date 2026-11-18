@@ -1438,7 +1438,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var r = await sb.from('profiles').update({full_name:nm, unit:un}).eq('id', me);
       if(r.error) throw r.error;
       profile.full_name = nm; profile.unit = un; showMe({name:nm}); applyProfile();
-      b.classList.add('done'); b.textContent = '✓ บันทึกสำเร็จ';
+      pmsg('#pMsg',''); b.classList.add('done'); b.textContent = '✓ บันทึกสำเร็จ';
       setTimeout(function(){ b.classList.remove('done'); b.textContent = 'บันทึกข้อมูล'; }, 3000);
     }catch(e){ pmsg('#pMsg','บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
     b.disabled = false;
@@ -1453,7 +1453,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var r = await sb.auth.updateUser({password:a});
       if(r.error) throw r.error;
       $('#p-pw').value = ''; $('#p-pw2').value = '';
-      b.classList.add('done'); b.textContent = '✓ เปลี่ยนรหัสผ่านสำเร็จ';
+      pmsg('#pwMsg',''); b.classList.add('done'); b.textContent = '✓ เปลี่ยนรหัสผ่านสำเร็จ';
       setTimeout(function(){ b.classList.remove('done'); b.textContent = 'เปลี่ยนรหัสผ่าน'; }, 3000);
     }catch(e){ pmsg('#pwMsg', (e && /same|different/i.test(e.message||'')) ? 'รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสเดิม' : 'เปลี่ยนรหัสผ่านไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
     b.disabled = false;
