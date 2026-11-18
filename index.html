@@ -126,7 +126,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .tl.hr{border-top:1px solid var(--line);color:var(--ink)}
 .cell{border:0;border-top:1px dashed var(--line);border-left:1px solid var(--line);background:transparent;cursor:pointer;padding:0;min-height:0}
 .cell.hr{border-top:1px solid var(--line)}
-.cell.end{cursor:default;pointer-events:none}.cell.end.armed{cursor:pointer;pointer-events:auto}.cell:hover{background:var(--hover)}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;max-width:min(92vw,460px);padding:12px 18px;border-radius:10px;background:#B3261E;color:#fff;font-size:15px;font-weight:600;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.25);text-align:center}.toast[hidden]{display:none}.cell.end{cursor:default;pointer-events:none}.cell.end.armed{cursor:pointer;pointer-events:auto}.cell:hover{background:var(--hover)}
 .bk{z-index:1;margin:1px 2px;padding:3px 7px;overflow:hidden;font-size:12px;line-height:1.35;text-align:left;border:1px solid;border-radius:3px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
 .bk b{font-weight:600}
 .bk.hu{background:hsl(var(--h) var(--u-bgs) var(--u-bg));color:hsl(var(--h) var(--u-fgs) var(--u-fg));border-color:hsl(var(--h) 55% var(--u-bd))}
@@ -202,6 +202,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 <style>body{margin:0}img{max-width:100%}:root{color-scheme:light}</style>
 </head>
 <body>
+<div id="toast" class="toast" role="alert" aria-live="assertive" hidden></div>
 <div class="wrap">
   <header class="top">
     <div class="brand">
@@ -587,15 +588,17 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   $('#f-on').addEventListener('change', function(){ $('#f-on-wrap').hidden = !$('#f-on').checked; });
   $('#f-bld').addEventListener('change', function(){ pickEnd = false; syncRooms(); curB = $('#f-bld').value; render(); });
   /* keep the draft from overlapping existing bookings: trim the end to the next booking, or flag a start that lands inside one */
+  var toastTimer;
+  function warn(t){ var e = $('#toast'); e.textContent = '⚠ ' + t; e.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function(){ e.hidden = true; }, 4500); }
   function fitDraft(){
     var bd = $('#f-bld').value, rm = $('#f-room').value, dt = $('#f-date').value;
     var st = parseInt($('#f-start').value,10), en = parseInt($('#f-end').value,10);
     if(!(st >= 0) || !(en > st)) return;
     var others = all.filter(function(x){ return blocking(x) && x.building === bd && x.room === rm && x.date === dt; });
-    if(others.some(function(x){ return x.start <= st && st < x.end; })){ say('ช่วงเวลาเริ่มนี้มีการจองแล้ว กรุณาเลือกเวลาอื่น','err'); return; }
+    if(others.some(function(x){ return x.start <= st && st < x.end; })){ say('ช่วงเวลาเริ่มนี้มีการจองแล้ว กรุณาเลือกเวลาอื่น','err'); warn('ช่วงเวลานี้มีการจองแล้ว กรุณาเลือกเวลาอื่น'); return; }
     var lim = N;
     others.forEach(function(x){ if(x.start >= st && x.start < lim) lim = x.start; });
-    if(en > lim){ $('#f-end').value = lim; say('เวลาสิ้นสุดถูกปรับเป็น ' + tl(lim) + ' เพราะมีการจองต่อจากนั้น','err'); }
+    if(en > lim){ $('#f-end').value = lim; say('เวลาสิ้นสุดถูกปรับเป็น ' + tl(lim) + ' เพราะมีการจองต่อจากนั้น','err'); warn('ไม่สามารถจองคร่อมช่วงที่มีการจองแล้ว เวลาสิ้นสุดถูกปรับเป็น ' + tl(lim) + ' น.'); }
   }
   $('#f-start').addEventListener('change', function(){
     var s = +$('#f-start').value; if(+$('#f-end').value <= s) $('#f-end').value = Math.min(N, s+1);
