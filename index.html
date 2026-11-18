@@ -691,7 +691,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     day.forEach(function(b){
       var ci = rooms.map(function(r){ return r.id; }).indexOf(b.room); if(ci<0) return;
       var k = el('button','bk '+b.status+(selected===b.id?' sel':'')); k.type='button';
-      k.style.gridColumn = String(ci+2); k.style.gridRow = (b.start+2)+' / '+(b.end+2);
+      k.style.gridColumn = String(ci+2); k.style.gridRow = (b.start+2)+' / '+(b.end+2+(b.end>=N?1:0)); /* a booking that ends at closing time also fills the closing row */
       k.appendChild(el('b',null,b.title));
       k.appendChild(el('span',null,tl(b.start)+'–'+tl(b.end)+' · '+(b.unit||'')+(b.status==='pending' ? ' · รออนุมัติ' : '')));
       if(b.name) k.appendChild(el('span',null,'ผู้จอง: '+b.name));
@@ -705,7 +705,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var dr = bOf($('#f-bld').value), dci = dr ? dr.rooms.map(function(r){ return r.id; }).indexOf($('#f-room').value) : -1;
       var ds = parseInt($('#f-start').value, 10), de = parseInt($('#f-end').value, 10);
       if($('#f-date').value === date && $('#f-bld').value === curB && dci >= 0 && ds >= 0 && de > ds){
-        var du = $('#f-unit').value, dk = el('div','bk draft'); dk.style.gridColumn = String(dci+2); dk.style.gridRow = (ds+2)+' / '+(de+2);
+        var du = $('#f-unit').value, dk = el('div','bk draft'); dk.style.gridColumn = String(dci+2); dk.style.gridRow = (ds+2)+' / '+(de+2+(de>=N?1:0));
         dk.appendChild(el('b',null,tl(ds)+'–'+tl(de)));
         if(pickEnd) dk.appendChild(el('span',null,'▼ คลิกช่องสุดท้ายของการประชุม'));
         dk.appendChild(el('span',null,(du || 'เลือกหน่วยงานเพื่อกำหนดสี')));
