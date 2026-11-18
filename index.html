@@ -118,7 +118,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .tab{border-left:5px solid var(--tb,var(--accent))}
 .tab[aria-selected="true"]{background:var(--tb,var(--accent));border-color:var(--tb,var(--accent));color:var(--tf,var(--accent-ink));font-weight:600}
 .tab small{display:block;font-size:11px;opacity:.85;font-weight:400}
-.tt{display:grid;grid-template-columns:58px repeat(var(--cols,3),minmax(110px,1fr));grid-template-rows:auto repeat(26,30px);border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:max-content;min-width:100%;box-sizing:border-box}
+.tt{display:grid;grid-template-columns:58px repeat(var(--cols,3),minmax(110px,1fr));grid-template-rows:auto repeat(26,30px) 24px;border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:max-content;min-width:100%;box-sizing:border-box}
 .hd{grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;padding:6px 8px;font-size:13px;line-height:1.35;overflow-wrap:anywhere;font-weight:600;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 20%,var(--surface));border-left:1px solid var(--line)}
 .hd small{font-weight:400;font-size:11px;color:var(--muted)}
 .hd.t{grid-column:1;border-left:0;font-size:12px;color:var(--muted)}
@@ -126,7 +126,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .tl.hr{border-top:1px solid var(--line);color:var(--ink)}
 .cell{border:0;border-top:1px dashed var(--line);border-left:1px solid var(--line);background:transparent;cursor:pointer;padding:0;min-height:0}
 .cell.hr{border-top:1px solid var(--line)}
-.cell:hover{background:var(--hover)}
+.cell.end{cursor:default;pointer-events:none}.cell:hover{background:var(--hover)}
 .bk{z-index:1;margin:1px 2px;padding:3px 7px;overflow:hidden;font-size:12px;line-height:1.35;text-align:left;border:1px solid;border-radius:3px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
 .bk b{font-weight:600}
 .bk.hu{background:hsl(var(--h) var(--u-bgs) var(--u-bg));color:hsl(var(--h) var(--u-fgs) var(--u-fg));border-color:hsl(var(--h) 55% var(--u-bd))}
@@ -682,6 +682,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         g.appendChild(c);
       });
     }
+    var te = el('div','tl hr', tl(N)); te.style.gridRow = String(N+2); g.appendChild(te); /* closing line: end of day */
+    rooms.forEach(function(room,ci){ var ce = el('div','cell hr end'); ce.style.gridColumn = String(ci+2); ce.style.gridRow = String(N+2); g.appendChild(ce); });
     day.forEach(function(b){
       var ci = rooms.map(function(r){ return r.id; }).indexOf(b.room); if(ci<0) return;
       var k = el('button','bk '+b.status+(selected===b.id?' sel':'')); k.type='button';
