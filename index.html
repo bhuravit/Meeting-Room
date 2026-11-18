@@ -1121,7 +1121,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       ev.preventDefault(); ok.disabled = true;
       try{
         await callUsers({action:'update', id:u.id, full_name:nm.value, unit:un.value, email:em.value, password:pw.value});
-        uEdit = null; uSay(pw.value ? 'บันทึกข้อมูลและเปลี่ยนรหัสผ่านแล้ว' : 'บันทึกข้อมูลแล้ว','good');
+        ok.classList.add('done'); ok.textContent = '✓ บันทึกสำเร็จ'; uSay('');
+        await new Promise(function(r){ setTimeout(r, 1200); });
+        uEdit = null;
         if(u.id === me){ $('#meName').textContent = nm.value || (em.value||'').split('@')[0]; }
         await loadUsers();
       }catch(e){ uSay(e.message,'err'); ok.disabled = false; }
