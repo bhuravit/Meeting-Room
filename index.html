@@ -118,7 +118,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .tab{border-left:5px solid var(--tb,var(--accent))}
 .tab[aria-selected="true"]{background:var(--tb,var(--accent));border-color:var(--tb,var(--accent));color:var(--tf,var(--accent-ink));font-weight:600}
 .tab small{display:block;font-size:11px;opacity:.85;font-weight:400}
-.tt{display:grid;grid-template-columns:58px repeat(var(--cols,3),minmax(110px,1fr));grid-template-rows:auto repeat(26,30px) 24px;border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:max-content;min-width:100%;box-sizing:border-box}
+.tt{display:grid;grid-template-columns:58px repeat(var(--cols,3),minmax(110px,1fr));grid-template-rows:auto repeat(27,30px) 24px;border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:max-content;min-width:100%;box-sizing:border-box}
 .hd{grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;padding:6px 8px;font-size:13px;line-height:1.35;overflow-wrap:anywhere;font-weight:600;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 20%,var(--surface));border-left:1px solid var(--line)}
 .hd small{font-weight:400;font-size:11px;color:var(--muted)}
 .hd.t{grid-column:1;border-left:0;font-size:12px;color:var(--muted)}
@@ -389,7 +389,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function(){
-  var N = 26; /* 30-minute slots from 07:00; 26 slots end at 20:00 */
+  var N = 27; /* 30-minute slots from 07:00; 27 slots end at 20:30 */
   var ST = {pending:'รอการอนุมัติ',approved:'อนุมัติ',rejected:'ไม่อนุมัติ',cancelled:'ยกเลิก'};
   var THD = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   var THM = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
