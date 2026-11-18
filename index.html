@@ -561,7 +561,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     for(var i=0;i<N;i++) s.push([i, tl(i)]);
     for(var j=1;j<=N;j++) e.push([j, tl(j)]);
     fillSelect($('#f-start'), s); fillSelect($('#f-end'), e);
-    $('#f-start').value = 4; $('#f-end').value = 8;
+    $('#f-start').value = 4; $('#f-end').value = 5;
     $('#f-date').value = date;
     try{ localStorage.removeItem('smc-name'); localStorage.removeItem('smc-unit'); }catch(x){}
   }
@@ -573,7 +573,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     ['f-cm','f-ca','f-lunch'].forEach(function(n){ document.querySelector('input[name='+n+'][value="0"]').checked = true; });
     Array.prototype.forEach.call(document.querySelectorAll('input[name=f-eq]'), function(c){ c.checked = false; });
     $('#f-on-wrap').hidden = true;
-    $('#f-start').value = 4; $('#f-end').value = 8; $('#f-date').value = date; draftOn = false; pickEnd = false;
+    $('#f-start').value = 4; $('#f-end').value = 5; $('#f-date').value = date; draftOn = false; pickEnd = false;
     say('');
   }
 
@@ -587,7 +587,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   $('#f-on').addEventListener('change', function(){ $('#f-on-wrap').hidden = !$('#f-on').checked; });
   $('#f-bld').addEventListener('change', function(){ pickEnd = false; syncRooms(); curB = $('#f-bld').value; render(); });
   $('#f-start').addEventListener('change', function(){
-    var s = +$('#f-start').value; if(+$('#f-end').value <= s) $('#f-end').value = Math.min(N, s+2);
+    var s = +$('#f-start').value; if(+$('#f-end').value <= s) $('#f-end').value = Math.min(N, s+1);
     pickEnd = false; draftOn = true; render();
   });
   ['f-room','f-end','f-unit'].forEach(function(id){ $('#'+id).addEventListener('change', function(){ if(id !== 'f-unit') pickEnd = false; draftOn = true; render(); }); });
@@ -661,7 +661,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var day = all.filter(function(b){ return b.date === date && b.building === curB && blocking(b); });
     for(let i=0;i<N;i++){ /* let, so each cell's click handler keeps its own slot */
       var hr = (i % 2 === 0);
-      var t = el('div','tl'+(hr?' hr':''), hr ? tl(i) : ''); t.style.gridRow = String(i+2); g.appendChild(t);
+      var t = el('div','tl'+(hr?' hr':''), tl(i)); t.style.gridRow = String(i+2); g.appendChild(t);
       rooms.forEach(function(room,ci){
         var busy = day.some(function(b){ return b.room===room.id && b.start<=i && i<b.end; });
         if(busy) return;
@@ -676,7 +676,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           }
           $('#f-bld').value = curB; syncRooms(); $('#f-room').value = room.id; $('#f-date').value = date;
           pickEnd = true;
-          $('#f-start').value = i; $('#f-end').value = Math.min(N, i+2); /* start = clicked slot, end = start + 1 hour (2 slots) */
+          $('#f-start').value = i; $('#f-end').value = Math.min(N, i+1); /* start = clicked slot, end = start + 30 min (1 slot) */
           draftOn = true; render(); /* keep focus on the timetable so the next click can set the end time */
         });
         g.appendChild(c);
