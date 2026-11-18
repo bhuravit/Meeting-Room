@@ -44,7 +44,7 @@ h3{font-size:15px}
 .vmrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 4px}
 label.rf{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:13px;min-width:0}
 .rf select{width:auto;max-width:min(100%,420px)}
-.cal{display:grid;grid-template-columns:repeat(7,minmax(128px,1fr));border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));min-width:900px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:100%}@media (max-width:760px){.cal .cc{padding:2px;overflow:hidden}.cal .bk{overflow:hidden}.cal .bk{margin:0;padding:2px 3px;font-size:10px;line-height:1.25}.cal .bk span:not(:first-of-type){display:none}.cal .ch{padding:4px 2px;font-size:11px}}
 .cal .ch{padding:6px 8px;text-align:center;font-size:13px;font-weight:600;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 20%,var(--surface));border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;color:var(--ink);font-family:inherit}
 .cal .ch small{display:block;font-weight:400;color:var(--muted)}
 .cal .ch.today{box-shadow:inset 0 -3px 0 var(--accent)}
@@ -843,8 +843,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       days.forEach(function(d){
         var dd = parse(d), c = el('div','cc' + (d === today ? ' today' : '') + (dd.getMonth() !== mon ? ' dim' : '')), items = by[d] || [];
         var n = el('button','dn', String(dd.getDate())); n.type = 'button'; n.title = 'ดูรายวัน ' + thDate(d); n.addEventListener('click', function(){ goDay(d); }); c.appendChild(n);
-        items.slice(0,3).forEach(function(b){ c.appendChild(chip(b)); });
-        if(items.length > 3){ var m = el('button','more','+ อีก ' + (items.length - 3) + ' รายการ'); m.type = 'button'; m.addEventListener('click', function(){ goDay(d); }); c.appendChild(m); }
+        items.forEach(function(b){ c.appendChild(chip(b)); });
+        /* show every booking of the day */
         cal.appendChild(c);
       });
     }
