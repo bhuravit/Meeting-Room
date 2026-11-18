@@ -41,7 +41,7 @@ h1{font-size:26px;line-height:1.25}
 h2{font-size:18px}
 h3{font-size:15px}
 .vm{margin:0}
-.vmrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 4px}
+#dateNav{gap:6px}#dateNav input{padding:5px 8px;font-size:13px;min-height:0;height:auto}.vmrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 4px}
 #roomFilter{max-width:100%;min-width:0}
 label.rf{max-width:100%;display:flex;flex-direction:row;align-items:center;gap:8px;font-size:13px;min-width:0}
 .rf select{width:auto;max-width:min(100%,420px)}
@@ -212,12 +212,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       <h1 id="pageTitle">ระบบจองห้องประชุม</h1>
     </div>
     <nav class="nav" aria-label="เมนู">
-      <span class="nav" id="dateNav">
-        <button class="btn" id="prev" type="button">‹ วันก่อนหน้า</button>
-        <button class="btn" id="today" type="button">วันนี้</button>
-        <button class="btn" id="next" type="button">วันถัดไป ›</button>
-        <input id="vdate" type="date" aria-label="ไปยังวันที่" style="width:auto">
-      </span>
       <span class="me" id="meChip" hidden>
         <img id="meImg" alt="" width="28" height="28">
         <span id="meName"></span>
@@ -265,6 +259,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           <button type="button" class="btn sm" id="vmMonth" aria-pressed="false">รายเดือน</button>
         </div>
         <label class="rf" id="rfWrap" hidden>ห้องประชุม <select id="roomFilter" aria-label="เลือกห้องประชุม"></select></label>
+      <span class="nav" id="dateNav" style="margin-left:auto">
+        <button class="btn sm" id="prev" type="button">‹ วันก่อนหน้า</button>
+        <button class="btn sm" id="today" type="button">วันนี้</button>
+        <button class="btn sm" id="next" type="button">วันถัดไป ›</button>
+        <input id="vdate" type="date" aria-label="ไปยังวันที่" style="width:auto">
+      </span>
       </div>
       <div class="tabs" id="tabs" role="tablist" aria-label="เลือกอาคาร"></div>
       <div class="scroll" id="dayScroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
