@@ -42,7 +42,8 @@ h2{font-size:18px}
 h3{font-size:15px}
 .vm{margin:0}
 .vmrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 4px}
-label.rf{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:13px;min-width:0}
+#roomFilter{max-width:100%;min-width:0}
+label.rf{max-width:100%;display:flex;flex-direction:row;align-items:center;gap:8px;font-size:13px;min-width:0}
 .rf select{width:auto;max-width:min(100%,420px)}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:100%}@media (max-width:760px){.cal .cc{padding:2px;overflow:hidden}.cal .bk{overflow:hidden}.cal .bk{margin:0;padding:2px 3px;font-size:10px;line-height:1.25}.cal .bk span:not(:first-of-type){display:none}.cal .ch{padding:4px 2px;font-size:11px}}
 .cal .ch{padding:6px 8px;text-align:center;font-size:13px;font-weight:600;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 20%,var(--surface));border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;color:var(--ink);font-family:inherit}
