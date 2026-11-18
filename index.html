@@ -797,9 +797,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
   function chip(b){
     var k = el('button','bk ' + b.status + (selected === b.id ? ' sel' : '')); k.type = 'button';
-    k.appendChild(el('b',null, tl(b.start) + '–' + tl(b.end) + ' · ' + roomShort(b)));
-    k.appendChild(el('span',null, b.title));
-    if(vmode === 'week'){ if(b.name) k.appendChild(el('span',null,'ผู้จอง: ' + b.name)); if(b.unit) k.appendChild(el('span',null,b.unit)); }
+    k.appendChild(el('b',null, roomShort(b)));
+    k.appendChild(el('span',null, tl(b.start) + '–' + tl(b.end)));
     paint(k, b.unit);
     k.title = b.title + ' · ' + (b.unit || '') + ' · ผู้จอง: ' + (b.name || '-') + (b.status === 'pending' ? ' · รออนุมัติ' : '');
     k.addEventListener('click', function(){ openDetail(b.id); });
