@@ -317,7 +317,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     </div>
     <section class="card stack" id="secUsers" role="tabpanel" aria-labelledby="atUsers">
       <div class="card-head"><h2 id="usrTitle">ผู้ใช้งาน <span class="mono" id="uCount"></span></h2></div>
-      <p class="sub">ผู้ดูแลเพิ่มผู้ใช้ใหม่ แก้ไขข้อมูลและรหัสผ่าน ตั้งสิทธิ์ผู้ดูแล หรือลบผู้ใช้ได้ รายการจองเดิมของผู้ที่ถูกลบจะยังอยู่ในตาราง</p>
       <form id="uForm" class="stack" style="gap:10px">
         <h3>เพิ่มผู้ใช้</h3>
         <label>ชื่อ-นามสกุล<input id="u-name" type="text" maxlength="120" required></label>
@@ -330,7 +329,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       </form>
       <div class="imp stack" id="impBox" style="gap:10px;border-top:1px solid var(--line);padding-top:14px">
         <h3>นำเข้าผู้ใช้จากไฟล์ Excel</h3>
-        <p class="sub">เพิ่มได้ครั้งละหลายคน (สูงสุด 200 รายการ) ไฟล์ต้องมีหัวคอลัมน์: ชื่อ-นามสกุล, หน่วยงาน, อีเมล, รหัสผ่าน (อย่างน้อย 8 ตัวอักษร) และ ผู้ดูแล (ใส่ "ใช่" ถ้าให้สิทธิ์ผู้ดูแล เว้นว่างถ้าไม่ให้)</p>
         <div class="acts">
           <button class="btn sm" id="impTpl" type="button">ดาวน์โหลดไฟล์ตัวอย่าง</button>
           <label class="btn sm" for="impFile" style="cursor:pointer">เลือกไฟล์ Excel / CSV</label>
