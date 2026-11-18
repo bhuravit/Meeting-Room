@@ -127,7 +127,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .tl.hr{border-top:1px solid var(--line);color:var(--ink)}
 .cell{border:0;border-top:1px dashed var(--line);border-left:1px solid var(--line);background:transparent;cursor:pointer;padding:0;min-height:0}
 .cell.hr{border-top:1px solid var(--line)}
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;max-width:min(92vw,460px);padding:12px 18px;border-radius:10px;background:#B3261E;color:#fff;font-size:15px;font-weight:600;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.25);text-align:center}.toast[hidden]{display:none}.cell.end{cursor:default;pointer-events:none}.cell.end.armed{cursor:pointer;pointer-events:auto}.cell:hover{background:var(--hover)}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;max-width:min(92vw,460px);padding:12px 18px;border-radius:10px;background:#B3261E;color:#fff;font-size:15px;font-weight:600;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.25);text-align:center}.toast[hidden]{display:none}.closedtag{display:inline-block;font-style:normal;font-size:11px;font-weight:600;color:#fff;background:#C62828;border-radius:10px;padding:1px 8px;margin-top:2px}.hd.isclosed{opacity:.85}.cell.closedcell{cursor:not-allowed;background:repeating-linear-gradient(135deg,var(--off-bg) 0 6px,transparent 6px 12px);opacity:.7}.cell.end{cursor:default;pointer-events:none}.cell.end.armed{cursor:pointer;pointer-events:auto}.cell:hover{background:var(--hover)}
 .bk{z-index:1;margin:1px 2px;padding:3px 7px;overflow:hidden;font-size:12px;line-height:1.35;text-align:left;border:1px solid;border-radius:3px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
 .bk b{font-weight:600}
 .bk.hu{background:hsl(var(--h) var(--u-bgs) var(--u-bg));color:hsl(var(--h) var(--u-fgs) var(--u-fg));border-color:hsl(var(--h) 55% var(--u-bd))}
@@ -181,7 +181,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .rrow .rn{flex:1 1 220px;min-width:0}
 .rrow .rs{flex:0 0 100px}
 .rrow .rw{flex:1 1 140px;min-width:0}
-.rrow-room{display:grid;grid-template-columns:minmax(0,1fr) 100px 96px;align-items:end}.rrow-room .rn,.rrow-room .rs{flex:none}.rrow-room .delslot{display:flex;justify-content:flex-end}@media (max-width:640px){.rrow-room{grid-template-columns:minmax(0,1fr) 90px}.rrow-room .delslot{grid-column:1/-1;justify-self:start}}.rrow .info{font-size:12px;color:var(--muted);align-self:center}
+.rrow-room{display:grid;grid-template-columns:minmax(0,1fr) 100px 140px 96px;align-items:end}.rrow-room .rst{flex:none}.rrow-room select.closed{border-color:var(--err);color:var(--err);font-weight:600}.rrow-room .rn,.rrow-room .rs{flex:none}.rrow-room .delslot{display:flex;justify-content:flex-end}@media (max-width:640px){.rrow-room{grid-template-columns:minmax(0,1fr) 90px}.rrow-room .rst{grid-column:1/-1}.rrow-room .delslot{grid-column:1/-1;justify-self:start}}.rrow .info{font-size:12px;color:var(--muted);align-self:center}
 .rooms{display:flex;flex-direction:column;gap:8px;padding-left:12px;border-left:2px solid var(--line)}
 .sub{margin:0;font-size:12px;color:var(--muted)}
 .opt{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
@@ -562,7 +562,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   function fillSelect(sel, items){ sel.innerHTML=''; items.forEach(function(it){ var o = el('option',null,it[1]); o.value = it[0]; sel.appendChild(o); }); }
   function syncRooms(){
     var sel = $('#f-room'), keep = sel.value;
-    fillSelect(sel, bOf($('#f-bld').value).rooms.map(function(r){ return [r.id, r.name]; }));
+    fillSelect(sel, bOf($('#f-bld').value).rooms.filter(function(r){ return !r.closed; }).map(function(r){ return [r.id, r.name]; }));
     if(keep && Array.prototype.some.call(sel.options, function(o){ return o.value === keep; })) sel.value = keep;
   }
   function refreshFormVenues(){
@@ -644,6 +644,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     if(b.equip.indexOf('online') < 0) b.onlineDetail = '';
     if(!b.date) return say('กรุณาเลือกวันที่','err');
     if(!b.room) return say('กรุณาเลือกห้อง','err');
+    if(rm && rm.closed) return say('ห้องนี้ปิดปรับปรุง ไม่สามารถจองได้','err');
     if(b.end <= b.start) return say('เวลาสิ้นสุดต้องหลังเวลาเริ่ม','err');
     if(!b.title || !b.unit || !b.name) return say('กรุณากรอกเรื่อง หน่วยงาน และชื่อผู้จอง','err');
     if(!canWrite) return say('บัญชีนี้ดูตารางได้อย่างเดียว ไม่สามารถจองได้','err');
@@ -690,6 +691,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var h = el('div','hd'); h.style.gridColumn = String(i+2);
       h.appendChild(el('span',null,r.name));
       if(r.seats) h.appendChild(el('small',null,r.seats+' ที่นั่ง'));
+      if(r.closed){ h.appendChild(el('em','closedtag','ปิดปรับปรุง')); h.classList.add('isclosed'); }
       g.appendChild(h);
     });
     var day = all.filter(function(b){ return b.date === date && b.building === curB && blocking(b); });
@@ -699,6 +701,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       rooms.forEach(function(room,ci){
         var busy = day.some(function(b){ return b.room===room.id && b.start<=i && i<b.end; });
         if(busy) return;
+        if(room.closed){ var cc = el('div','cell hr-no closedcell'+(hr?' hr':'')); cc.style.gridColumn = String(ci+2); cc.style.gridRow = String(i+2); g.appendChild(cc); return; }
         var c = el('button','cell'+(hr?' hr':'')); c.type='button';
         c.style.gridColumn = String(ci+2); c.style.gridRow = String(i+2);
         c.setAttribute('aria-label', room.name+' '+tl(i)+'-'+tl(i+1)+' ว่าง');
@@ -998,6 +1001,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         var row = el('div','rrow rrow-room');
         row.appendChild(inp('ชื่อห้อง', r.name, 'rn', function(v){ r.name = v; }));
         row.appendChild(inp('ที่นั่ง', r.seats, 'rs', function(v){ r.seats = v; }, 'number'));
+        var stl = el('label','rst'); stl.appendChild(document.createTextNode('สถานะห้อง'));
+        var sts = document.createElement('select');
+        [['ok','พร้อมใช้'],['closed','ปิดปรับปรุง']].forEach(function(o){ var op = el('option',null,o[1]); op.value = o[0]; sts.appendChild(op); });
+        sts.value = r.closed ? 'closed' : 'ok'; if(r.closed) sts.classList.add('closed');
+        sts.addEventListener('change', function(){ r.closed = sts.value === 'closed'; sts.classList.toggle('closed', r.closed); markDirty(); });
+        stl.appendChild(sts); row.appendChild(stl);
         var n = all.filter(function(x){ return x.room === r.id && blocking(x); }).length;
         
         var delSlot = el('span','delslot'); if(b.rooms.length > 1) delSlot.appendChild(armBtn('ลบห้อง', 'r:'+r.id, function(){ b.rooms.splice(ri,1); markDirty(); renderCfg(); })); row.appendChild(delSlot);
@@ -1029,7 +1038,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         var r = b.rooms[j], rn = (r.name||'').trim();
         if(!rn) return bad('กรุณากรอกชื่อห้องให้ครบ (อาคาร: '+name+')');
         var s = parseInt(r.seats,10);
-        rooms.push({id:r.id, name:rn, seats: s > 0 ? s : null});
+        rooms.push({id:r.id, name:rn, seats: s > 0 ? s : null, closed: !!r.closed});
       }
       out.push({id:b.id, name:name, short:(b.short||'').trim() || name, rooms:rooms});
     }
