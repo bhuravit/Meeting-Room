@@ -586,13 +586,24 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
   $('#f-on').addEventListener('change', function(){ $('#f-on-wrap').hidden = !$('#f-on').checked; });
   $('#f-bld').addEventListener('change', function(){ pickEnd = false; syncRooms(); curB = $('#f-bld').value; render(); });
+  /* keep the draft from overlapping existing bookings: trim the end to the next booking, or flag a start that lands inside one */
+  function fitDraft(){
+    var bd = $('#f-bld').value, rm = $('#f-room').value, dt = $('#f-date').value;
+    var st = parseInt($('#f-start').value,10), en = parseInt($('#f-end').value,10);
+    if(!(st >= 0) || !(en > st)) return;
+    var others = all.filter(function(x){ return blocking(x) && x.building === bd && x.room === rm && x.date === dt; });
+    if(others.some(function(x){ return x.start <= st && st < x.end; })){ say('ช่วงเวลาเริ่มนี้มีการจองแล้ว กรุณาเลือกเวลาอื่น','err'); return; }
+    var lim = N;
+    others.forEach(function(x){ if(x.start >= st && x.start < lim) lim = x.start; });
+    if(en > lim){ $('#f-end').value = lim; say('เวลาสิ้นสุดถูกปรับเป็น ' + tl(lim) + ' เพราะมีการจองต่อจากนั้น','err'); }
+  }
   $('#f-start').addEventListener('change', function(){
     var s = +$('#f-start').value; if(+$('#f-end').value <= s) $('#f-end').value = Math.min(N, s+1);
-    pickEnd = false; draftOn = true; render();
+    say(''); fitDraft(); pickEnd = false; draftOn = true; render();
   });
-  ['f-room','f-end','f-unit'].forEach(function(id){ $('#'+id).addEventListener('change', function(){ if(id !== 'f-unit') pickEnd = false; draftOn = true; render(); }); });
+  ['f-room','f-end','f-unit'].forEach(function(id){ $('#'+id).addEventListener('change', function(){ if(id !== 'f-unit'){ say(''); fitDraft(); } if(id !== 'f-unit') pickEnd = false; draftOn = true; render(); }); });
   $('#form').addEventListener('focusin', function(ev){ if(ev.target.id === 'f-title' || /^(INPUT|TEXTAREA)$/.test(ev.target.tagName)){ if(pickEnd){ pickEnd = false; render(); } } });
-  $('#f-date').addEventListener('change', function(){ pickEnd = false; if($('#f-date').value){ date = $('#f-date').value; render(); } });
+  $('#f-date').addEventListener('change', function(){ pickEnd = false; if($('#f-date').value){ date = $('#f-date').value; say(''); fitDraft(); render(); } });
 
   $('#form').addEventListener('submit', async function(ev){
     ev.preventDefault(); say('');
@@ -671,7 +682,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         c.addEventListener('click', function(){
           if(auth === 'guest'){ pending = {b:curB, room:room.id, date:date, i:i}; auth = 'out'; route(); loginSay('กรุณาเข้าสู่ระบบก่อนจอง ' + room.name + ' เวลา ' + tl(i) + ' น.'); return; }
           if(pickEnd && $('#f-bld').value === curB && $('#f-room').value === room.id && $('#f-date').value === date && i >= parseInt($('#f-start').value, 10)){
-            $('#f-end').value = Math.min(N, i + 1); /* the clicked slot is the last slot of the meeting */
+            $('#f-end').value = Math.min(N, i + 1); say(''); fitDraft(); /* the clicked slot is the last slot of the meeting */
             pickEnd = false; draftOn = true; render(); $('#f-title').focus(); return;
           }
           $('#f-bld').value = curB; syncRooms(); $('#f-room').value = room.id; $('#f-date').value = date;
@@ -686,7 +697,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     rooms.forEach(function(room,ci){ var armed = pickEnd && auth !== 'guest' && $('#f-bld').value === curB && $('#f-room').value === room.id && $('#f-date').value === date;
       var ce = el(armed ? 'button' : 'div','cell hr end'+(armed?' armed':''));
       if(armed){ ce.type = 'button'; ce.setAttribute('aria-label', room.name+' สิ้นสุด '+tl(N));
-        ce.addEventListener('click', function(){ $('#f-end').value = N; pickEnd = false; draftOn = true; render(); $('#f-title').focus(); }); }
+        ce.addEventListener('click', function(){ $('#f-end').value = N; say(''); fitDraft(); pickEnd = false; draftOn = true; render(); $('#f-title').focus(); }); }
       ce.style.gridColumn = String(ci+2); ce.style.gridRow = String(N+2); g.appendChild(ce); });
     day.forEach(function(b){
       var ci = rooms.map(function(r){ return r.id; }).indexOf(b.room); if(ci<0) return;
@@ -704,7 +715,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     if(draftOn && !$('.side').hidden){
       var dr = bOf($('#f-bld').value), dci = dr ? dr.rooms.map(function(r){ return r.id; }).indexOf($('#f-room').value) : -1;
       var ds = parseInt($('#f-start').value, 10), de = parseInt($('#f-end').value, 10);
-      if($('#f-date').value === date && $('#f-bld').value === curB && dci >= 0 && ds >= 0 && de > ds){
+      var dRoom = $('#f-room').value, dHit = day.some(function(x){ return x.room === dRoom && x.start < de && ds < x.end; });
+      if($('#f-date').value === date && $('#f-bld').value === curB && dci >= 0 && ds >= 0 && de > ds && !dHit){
         var du = $('#f-unit').value, dk = el('div','bk draft'); dk.style.gridColumn = String(dci+2); dk.style.gridRow = (ds+2)+' / '+(de+2+(de>=N?1:0));
         dk.appendChild(el('b',null,tl(ds)+'–'+tl(de)));
         if(pickEnd) dk.appendChild(el('span',null,'▼ คลิกช่องสุดท้ายของการประชุม'));
