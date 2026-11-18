@@ -255,7 +255,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         <div class="legend">
           <span><i class="sw ok"></i>อนุมัติ (กรอบทึบ)</span>
           <span><i class="sw wait"></i>รอการอนุมัติ (กรอบประ ลายเส้น)</span>
-          <span id="hintClick">คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด</span>
+          <span id="hintClick" hidden>คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด</span>
         </div>
       </div>
       <div class="vmrow">
@@ -1386,8 +1386,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#vdate').value = date;
     var dm = vmode === 'day';
     $('#dayScroll').hidden = !dm; $('#altScroll').hidden = dm;
-    $('#hintClick').classList.toggle('pickhint', dm && pickEnd && !$('.side').hidden);
-    $('#hintClick').textContent = (dm && pickEnd && !$('.side').hidden) ? 'เลือกเวลาเริ่มแล้ว · คลิกช่องสุดท้ายของการประชุม (ห้องเดิม) เพื่อกำหนดเวลาสิ้นสุด' : dm ? 'คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด' : 'คลิกการจองเพื่อดูรายละเอียด · คลิกวันที่เพื่อไปมุมมองรายวันแล้วเลือกเวลาจอง';
+    $('#hintClick').hidden = true; /* hint text removed */
     [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).setAttribute('aria-pressed', vmode === m[1] ? 'true' : 'false'); });
     $('#prev').textContent = '‹ ' + (vmode === 'week' ? 'สัปดาห์ก่อนหน้า' : vmode === 'month' ? 'เดือนก่อนหน้า' : 'วันก่อนหน้า');
     $('#next').textContent = (vmode === 'week' ? 'สัปดาห์ถัดไป' : vmode === 'month' ? 'เดือนถัดไป' : 'วันถัดไป') + ' ›';
