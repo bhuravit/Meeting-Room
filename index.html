@@ -1084,8 +1084,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var chip = el('span','chip '+(u.isAdmin?'approved':'pending'), u.id === me ? (u.isAdmin ? 'ผู้ดูแล · คุณ' : 'คุณ') : (u.isAdmin ? 'ผู้ดูแล' : 'ผู้ใช้'));
       row.appendChild(chip); li.appendChild(row);
       if(uEdit === u.id){ li.appendChild(editForm(u)); ul.appendChild(li); return; }
-      li.appendChild(lineP('อีเมล', u.email || '-'));
-      if(u.unit) li.appendChild(lineP('หน่วยงาน', u.unit));
       var eb = el('button','btn sm','แก้ไขข้อมูล / รหัสผ่าน'); eb.type = 'button';
       eb.addEventListener('click', function(){ uEdit = u.id; uArm = null; uSay(''); renderUsers(); });
       if(u.id === me){ var own = el('div','acts'); own.appendChild(eb); li.appendChild(own); }
