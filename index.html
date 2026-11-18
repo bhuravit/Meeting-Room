@@ -458,7 +458,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     if(HUE[unit] == null) e.classList.add('nounit');
     else { e.style.setProperty('--h', HUE[unit]); e.classList.add('hu'); }
   }
-  var BUILDINGS = clone(DEFAULT_B);
+  var BUILDINGS = clone(DEFAULT_B), venuesLoaded = false;
   /* Building colors: Sirinthorn building purple, Chaloem building yellow; any building added later cycles through EXTRA. */
   var BCOL = {
     b1:{bg:'hsl(280 45% 40%)', fg:'#FFFFFF'},
@@ -530,7 +530,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     rawB = rs[0].data.map(fromRow);
     dec = {}; rs[1].data.forEach(function(d){ dec[d.booking_id] = d; });
     var bd = rs[2].data && rs[2].data.buildings;
-    BUILDINGS = (Array.isArray(bd) && bd.length) ? clone(bd) : clone(DEFAULT_B);
+    if(Array.isArray(bd) && bd.length) BUILDINGS = clone(bd);
+    else if(!rs[2].error && !venuesLoaded) BUILDINGS = clone(DEFAULT_B); /* never fall back to the defaults on a read error */
+    if(Array.isArray(bd) && bd.length) venuesLoaded = true;
     recompute(); onVenues();
   }
   async function addBooking(b){
