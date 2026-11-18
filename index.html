@@ -728,8 +728,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var k = el('button','bk '+b.status+(selected===b.id?' sel':'')); k.type='button';
       k.style.gridColumn = String(ci+2); k.style.gridRow = (b.start+2)+' / '+(b.end+2+(b.end>=N?1:0)); /* a booking that ends at closing time also fills the closing row */
       k.appendChild(el('b',null,b.title));
-      k.appendChild(el('span',null,tl(b.start)+'–'+tl(b.end)+' · '+(b.unit||'')+(b.status==='pending' ? ' · รออนุมัติ' : '')));
+      k.appendChild(el('span',null,tl(b.start)+'–'+tl(b.end)+(b.status==='pending' ? ' · รออนุมัติ' : '')));
       if(b.name) k.appendChild(el('span',null,'ผู้จอง: '+b.name));
+      if(b.unit) k.appendChild(el('span',null,b.unit));
       paint(k, b.unit);
       var ek = eqList(b); k.title = 'ผู้จอง: '+(b.name||'-')+' · อุปกรณ์: '+(ek.length ? ek.join(', ') : 'ไม่ขอใช้อุปกรณ์');
       k.addEventListener('click', function(){ openDetail(b.id); });
@@ -793,7 +794,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var k = el('button','bk ' + b.status + (selected === b.id ? ' sel' : '')); k.type = 'button';
     k.appendChild(el('b',null, tl(b.start) + '–' + tl(b.end) + ' · ' + roomShort(b)));
     k.appendChild(el('span',null, b.title));
-    if(vmode === 'week' && b.name) k.appendChild(el('span',null,'ผู้จอง: ' + b.name));
+    if(vmode === 'week'){ if(b.name) k.appendChild(el('span',null,'ผู้จอง: ' + b.name)); if(b.unit) k.appendChild(el('span',null,b.unit)); }
     paint(k, b.unit);
     k.title = b.title + ' · ' + (b.unit || '') + ' · ผู้จอง: ' + (b.name || '-') + (b.status === 'pending' ? ' · รออนุมัติ' : '');
     k.addEventListener('click', function(){ openDetail(b.id); });
