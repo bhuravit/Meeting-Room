@@ -74,7 +74,7 @@ a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.sm{min-height:30px;padding:3px 10px;font-size:13px}
 .btn.ok{border-color:var(--ok);color:var(--ok)}
-.btn.bad{border-color:var(--err);color:var(--err)}
+.btn.bad{border-color:var(--err);color:var(--err)}.btn.bad.armed,.btn.bad.armed:hover{background:#C62828;border-color:#C62828;color:#fff;font-weight:600}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
 .btn.busy{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;opacity:1}
 .btn:active:not([disabled]){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -838,10 +838,10 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     function mk(label, cls, status){
       var key = b.id+':'+status;
       var isArmed = armed === key && (status==='cancelled' || status==='rejected');
-      var btn = el('button','btn sm '+cls, isArmed ? 'ยืนยัน: '+label : label); btn.type='button';
+      var btn = el('button','btn sm '+cls+(isArmed?' armed':''), isArmed ? 'ยืนยัน: '+label+' ?' : label); btn.type='button';
       btn.addEventListener('click', function(){
         if(status==='cancelled' || status==='rejected'){
-          if(armed !== key){ armed = key; clearTimeout(armTimer); armTimer = setTimeout(function(){ armed = null; render(); }, 4000); render(); return; }
+          if(armed !== key){ armed = key; clearTimeout(armTimer); armTimer = setTimeout(function(){ armed = null; render(); }, 6000); render(); return; }
           armed = null;
         }
         setStatus(b.id, status);
