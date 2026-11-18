@@ -180,7 +180,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .rrow .rn{flex:1 1 220px;min-width:0}
 .rrow .rs{flex:0 0 100px}
 .rrow .rw{flex:1 1 140px;min-width:0}
-.rrow-room{display:grid;grid-template-columns:minmax(0,1fr) 100px 130px 96px;align-items:end}.rrow-room .rn,.rrow-room .rs{flex:none}.rrow-room .delslot{display:flex;justify-content:flex-end}@media (max-width:640px){.rrow-room{grid-template-columns:minmax(0,1fr) 90px}.rrow-room .info,.rrow-room .delslot{grid-column:1/-1;justify-self:start}}.rrow .info{font-size:12px;color:var(--muted);align-self:center}
+.rrow-room{display:grid;grid-template-columns:minmax(0,1fr) 100px 96px;align-items:end}.rrow-room .rn,.rrow-room .rs{flex:none}.rrow-room .delslot{display:flex;justify-content:flex-end}@media (max-width:640px){.rrow-room{grid-template-columns:minmax(0,1fr) 90px}.rrow-room .delslot{grid-column:1/-1;justify-self:start}}.rrow .info{font-size:12px;color:var(--muted);align-self:center}
 .rooms{display:flex;flex-direction:column;gap:8px;padding-left:12px;border-left:2px solid var(--line)}
 .sub{margin:0;font-size:12px;color:var(--muted)}
 .opt{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
@@ -956,7 +956,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         row.appendChild(inp('ชื่อห้อง', r.name, 'rn', function(v){ r.name = v; }));
         row.appendChild(inp('ที่นั่ง', r.seats, 'rs', function(v){ r.seats = v; }, 'number'));
         var n = all.filter(function(x){ return x.room === r.id && blocking(x); }).length;
-        row.appendChild(el('span','info', n ? 'มีการจอง '+n+' รายการ' : ''));
+        
         var delSlot = el('span','delslot'); if(b.rooms.length > 1) delSlot.appendChild(armBtn('ลบห้อง', 'r:'+r.id, function(){ b.rooms.splice(ri,1); markDirty(); renderCfg(); })); row.appendChild(delSlot);
         rooms.appendChild(row);
       });
