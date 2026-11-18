@@ -149,7 +149,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .msg{grid-column:1/-1;min-height:20px;margin:0;font-size:13px}
 .msg.err{color:var(--err)}
 .msg.good{color:var(--ok);font-weight:600;font-size:14px}
-.btn.primary.done,.btn.primary.done:hover{background:#1B8A5A;border-color:#1B8A5A;color:#fff}
+.btn.primary.done:disabled,.btn.primary.done,.btn.primary.done:hover{opacity:1;background:#1B8A5A;border-color:#1B8A5A;color:#fff}
 .list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
 .item{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .item.sel{border-color:var(--accent)}
@@ -923,7 +923,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   $('#banner').addEventListener('click', function(){ if(this.dataset.jump) jumpPending(); });
 
   function resetDraft(){ draft = clone(BUILDINGS); dirty = false; }
-  function markDirty(){ dirty = true; $('#cfgSave').disabled = false; $('#cfgReset').disabled = false; $('#cfgMsg').textContent = ''; $('#cfgMsg').className = 'msg'; }
+  var cfgDoneTimer; function markDirty(){ var sv0 = $('#cfgSave'); clearTimeout(cfgDoneTimer); sv0.classList.remove('done'); sv0.textContent = 'บันทึกการเปลี่ยนแปลง'; dirty = true; $('#cfgSave').disabled = false; $('#cfgReset').disabled = false; $('#cfgMsg').textContent = ''; $('#cfgMsg').className = 'msg'; }
   function inp(label, val, cls, on, type){
     var l = el('label', cls); l.appendChild(document.createTextNode(label));
     var i = document.createElement('input'); i.type = type || 'text'; i.value = val == null ? '' : val;
@@ -995,7 +995,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       if(local){ BUILDINGS = clone(out); onVenues(); }
       else{ var cr = await sb.from('venues_config').upsert({id:1, buildings:out, updated_by:me, updated_at:new Date().toISOString()}); if(cr.error) throw cr.error; BUILDINGS = clone(out); onVenues(); }
       dirty = false; resetDraft(); renderCfg();
-      msg.textContent = 'บันทึกแล้ว'; msg.className = 'msg good';
+      msg.textContent = '✓ บันทึกสำเร็จ'; msg.className = 'msg good';
+      var sv = $('#cfgSave'); sv.classList.add('done'); sv.textContent = '✓ บันทึกสำเร็จ';
+      clearTimeout(cfgDoneTimer); cfgDoneTimer = setTimeout(function(){ sv.classList.remove('done'); sv.textContent = 'บันทึกการเปลี่ยนแปลง'; msg.textContent = ''; }, 4000);
     }catch(e){ $('#cfgSave').disabled = false; bad('บันทึกไม่สำเร็จ เฉพาะผู้มีสิทธิ์แก้ไขเท่านั้นที่เปลี่ยนค่านี้ได้'); }
   });
 
