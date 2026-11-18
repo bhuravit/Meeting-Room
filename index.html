@@ -220,6 +220,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         <img id="meImg" alt="" width="28" height="28">
         <span id="meName"></span>
         <span class="chip approved" id="meRole"></span>
+        <button class="btn sm" id="meEdit" type="button" hidden>ข้อมูลส่วนตัว</button>
         <button class="btn sm" id="exitDemo" type="button" hidden>ออกจากโหมดทดลอง</button>
       </span>
       <a class="btn" id="goAdmin" href="#admin" hidden>หน้าผู้ดูแล</a>
@@ -383,6 +384,27 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     <div class="card-head"><h2 id="mTitle"></h2><button class="btn sm" id="mClose" type="button">ปิด</button></div>
     <dl class="dl" id="mBody"></dl>
     <div class="acts" id="mActs"></div>
+  </div>
+</div>
+
+<div class="modal" id="pmodal" hidden>
+  <div class="sheet card" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+    <div class="card-head"><h2 id="pTitle">ข้อมูลส่วนตัว</h2><button class="btn sm" id="pClose" type="button">ปิด</button></div>
+    <form class="stack" id="pForm" style="gap:10px">
+      <label>อีเมลสถาบัน<input type="email" id="p-email" readonly></label>
+      <label>ชื่อ-นามสกุล<input type="text" id="p-name" maxlength="120" required></label>
+      <label>หน่วยงาน<select id="p-unit" required></select></label>
+      <div class="acts"><button class="btn sm primary" id="pSave" type="submit">บันทึกข้อมูล</button></div>
+      <p class="msg" id="pMsg" role="status"></p>
+    </form>
+    <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+    <form class="stack" id="pwForm" style="gap:10px">
+      <b>เปลี่ยนรหัสผ่าน</b>
+      <label>รหัสผ่านใหม่<input type="password" id="p-pw" minlength="8" autocomplete="new-password" placeholder="อย่างน้อย 8 ตัวอักษร" required></label>
+      <label>ยืนยันรหัสผ่านใหม่<input type="password" id="p-pw2" minlength="8" autocomplete="new-password" required></label>
+      <div class="acts"><button class="btn sm primary" id="pwSave" type="submit">เปลี่ยนรหัสผ่าน</button></div>
+      <p class="msg" id="pwMsg" role="status"></p>
+    </form>
   </div>
 </div>
 
@@ -1332,7 +1354,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#meImg').hidden = true;
     $('#meName').textContent = who.name || 'ผู้ใช้';
     $('#meRole').textContent = canEdit ? 'ผู้ดูแล' : 'ผู้จอง';
-    $('#meRole').hidden = false; $('#exitDemo').hidden = false; $('#exitDemo').textContent = 'ออกจากระบบ';
+    $('#meRole').hidden = false; $('#meEdit').hidden = local || auth !== 'in'; $('#exitDemo').hidden = false; $('#exitDemo').textContent = 'ออกจากระบบ';
   }
   function renderLogin(){
     var chk = auth === 'checking';
@@ -1394,6 +1416,48 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   window.addEventListener('hashchange', route);
 
   /* ---------- start ---------- */
+  /* ---------- own profile / password ---------- */
+  function pmsg(id, t, k){ var m = $(id); m.textContent = t; m.className = 'msg ' + (k||''); }
+  $('#meEdit').addEventListener('click', async function(){
+    var us = $('#p-unit'); if(!us.options.length) us.innerHTML = $('#u-unit').innerHTML;
+    var sess = await sb.auth.getSession();
+    $('#p-email').value = (sess.data && sess.data.session && sess.data.session.user.email) || '';
+    $('#p-name').value = profile.full_name || ''; us.value = profile.unit || '';
+    $('#p-pw').value = ''; $('#p-pw2').value = ''; pmsg('#pMsg',''); pmsg('#pwMsg','');
+    $('#pmodal').hidden = false; $('#p-name').focus();
+  });
+  function closeP(){ $('#pmodal').hidden = true; }
+  $('#pClose').addEventListener('click', closeP);
+  $('#pmodal').addEventListener('click', function(e){ if(e.target === $('#pmodal')) closeP(); });
+  $('#pForm').addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    var nm = $('#p-name').value.trim(), un = $('#p-unit').value, b = $('#pSave');
+    if(!nm || !un){ pmsg('#pMsg','กรุณากรอกชื่อและเลือกหน่วยงาน','err'); return; }
+    b.disabled = true;
+    try{
+      var r = await sb.from('profiles').update({full_name:nm, unit:un}).eq('id', me);
+      if(r.error) throw r.error;
+      profile.full_name = nm; profile.unit = un; showMe({name:nm}); applyProfile();
+      pmsg('#pMsg','✓ บันทึกสำเร็จ','good'); b.classList.add('done'); b.textContent = '✓ บันทึกสำเร็จ';
+      setTimeout(function(){ b.classList.remove('done'); b.textContent = 'บันทึกข้อมูล'; }, 3000);
+    }catch(e){ pmsg('#pMsg','บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
+    b.disabled = false;
+  });
+  $('#pwForm').addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    var a = $('#p-pw').value, c = $('#p-pw2').value, b = $('#pwSave');
+    if(a.length < 8){ pmsg('#pwMsg','รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร','err'); return; }
+    if(a !== c){ pmsg('#pwMsg','รหัสผ่านทั้งสองช่องไม่ตรงกัน','err'); return; }
+    b.disabled = true;
+    try{
+      var r = await sb.auth.updateUser({password:a});
+      if(r.error) throw r.error;
+      $('#p-pw').value = ''; $('#p-pw2').value = '';
+      pmsg('#pwMsg','✓ เปลี่ยนรหัสผ่านสำเร็จ','good'); b.classList.add('done'); b.textContent = '✓ เปลี่ยนรหัสผ่านสำเร็จ';
+      setTimeout(function(){ b.classList.remove('done'); b.textContent = 'เปลี่ยนรหัสผ่าน'; }, 3000);
+    }catch(e){ pmsg('#pwMsg', (e && /same|different/i.test(e.message||'')) ? 'รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสเดิม' : 'เปลี่ยนรหัสผ่านไม่สำเร็จ ลองใหม่อีกครั้ง','err'); }
+    b.disabled = false;
+  });
   $('#exitDemo').addEventListener('click', async function(){
     if(sb) await sb.auth.signOut();
   });
