@@ -193,12 +193,13 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .sub{margin:0;font-size:12px;color:var(--muted)}
 .opt{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
 .opt .ol{font-size:13px;color:var(--muted);flex:0 0 120px}
-.opt label{flex-direction:row;align-items:center;gap:6px;font-size:14px;color:var(--ink)}
-.opt input{width:auto;min-height:0;margin:0}
+.opt label{flex-direction:row;align-items:center;gap:10px;font-size:15px;color:var(--ink);min-height:44px;padding:6px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card,#fff);cursor:pointer;transition:background .12s,border-color .12s}
+.opt label:hover{border-color:var(--accent)}
+.opt label:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600}
+.opt input{width:22px;height:22px;min-height:0;margin:0;flex:none;accent-color:var(--accent);cursor:pointer}
 .opt.eq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;align-items:start}
 .opt.eq .ol{grid-column:1/-1}
-.opt.eq label{align-items:flex-start;line-height:1.4}
-.opt.eq input{margin-top:3px;flex:none}
+.opt.eq label{align-items:center;line-height:1.35}
 .login{max-width:460px;width:100%;margin:24px auto;display:flex;flex-direction:column;gap:14px}
 .login p{margin:0}
 .me{display:inline-flex;gap:8px;align-items:center;padding:3px 12px 3px 4px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-size:13px;min-width:0}
