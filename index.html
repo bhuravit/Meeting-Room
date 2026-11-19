@@ -174,6 +174,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .chip{font-size:12px;padding:1px 9px;border-radius:99px;border:1px solid;white-space:nowrap}
 .chip.approved{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
 .chip.pending{background:var(--wait-bg);color:var(--wait);border-color:var(--wait)}
+.notice[data-jump="1"]{background:#FFF1CC;border:2px solid #E0A100;border-style:solid;color:#5C3D00;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(224,161,0,.25)}
+.notice[data-jump="1"]::before{content:"🔔";font-size:20px;line-height:1;display:inline-block;transform-origin:50% 0;animation:bell 2.4s ease-in-out infinite}
+.notice[data-jump="1"]:hover{background:#FFE8A8}
+@keyframes bell{0%,60%,100%{transform:rotate(0)}65%{transform:rotate(14deg)}72%{transform:rotate(-12deg)}79%{transform:rotate(8deg)}86%{transform:rotate(-5deg)}}
+@media (prefers-reduced-motion:reduce){.notice[data-jump="1"]::before{animation:none}}
 .chip.rejected,.chip.cancelled{background:var(--off-bg);color:var(--off);border-color:var(--line)}
 .acts{display:flex;flex-wrap:wrap;gap:6px}
 .empty{margin:0;font-size:13px;color:var(--muted)}
