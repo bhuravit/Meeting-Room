@@ -1228,12 +1228,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       rows = []; for(var m = 0; m < 12; m++){ var key = $('#rp-year').value + '-' + pad(m+1), l = ap.filter(function(b){ return b.date.slice(0,7) === key; });
         rows.push({label:TH_M[m], n:l.length, h:l.reduce(function(a,b){ return a + (b.end - b.start); }, 0) / 2}); }
       body.appendChild(rpTable('แยกตามเดือน', rows, 'รายการ'));
-    } else {
-      var days = new Date(+$('#rp-month').value.slice(0,4), +$('#rp-month').value.slice(5), 0).getDate();
-      rows = []; for(var d = 1; d <= days; d++){ var ds = $('#rp-month').value + '-' + pad(d), l2 = ap.filter(function(b){ return b.date === ds; });
-        if(l2.length) rows.push({label:'วันที่ ' + d, n:l2.length, h:l2.reduce(function(a,b){ return a + (b.end - b.start); }, 0) / 2}); }
-      body.appendChild(rpTable('แยกตามวัน', rows, 'รายการ'));
-    }
+    } /* monthly report: no per-day breakdown */
     function sortDesc(a){ return a.sort(function(x,y){ return y.n - x.n; }); }
     body.appendChild(rpTable('แยกตามห้อง', sortDesc(tally(ap, function(b){ return [(b.buildingShort ? b.buildingShort + ' ' : '') + (b.roomName || b.room)]; })), 'รายการ'));
     body.appendChild(rpTable('แยกตามหน่วยงาน', sortDesc(tally(ap, function(b){ return [b.unit || 'ไม่ระบุ']; })), 'รายการ'));
