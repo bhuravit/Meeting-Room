@@ -112,7 +112,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .kpi b{display:block;font-size:24px;font-variant-numeric:tabular-nums}.kpi span{font-size:12px;opacity:.8}
 .rtbl{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
 .rtbl li{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,32%) 6em 6em;gap:14px;align-items:center;font-size:13px;padding:7px 2px;border-bottom:1px solid var(--line)}.rtbl li:last-child{border-bottom:0}
-.rtbl .nm{overflow-wrap:anywhere}.rtbl .bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.rtbl .bar i{display:block;height:100%;background:var(--accent)}
+.rtbl .nm.two{display:grid;grid-template-columns:minmax(7em,42%) minmax(0,1fr);gap:10px}.rtbl .nm .bld{opacity:.7}.rtbl .nm{overflow-wrap:anywhere}.rtbl .bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.rtbl .bar i{display:block;height:100%;background:var(--accent)}
 .rtbl .v{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .rsec{margin-bottom:18px}.rsec h3{margin:6px 0 4px;padding-bottom:6px;border-bottom:2px solid var(--line)}
 @media (max-width:560px){.rtbl li{grid-template-columns:minmax(0,1fr) 5.5em 4.5em;gap:4px 8px}.rtbl .bar{grid-column:1/-1;order:3}}
@@ -1193,12 +1193,14 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     rpRows = r.data.map(function(x){ var b = fromRow(x); b.status = rpStatus(x); return b; });
     renderReport();
   }
-  function rpTable(title, rows, unit){
+  function rpTable(title, rows, unit, cols){
     var sec = el('div','rsec'); sec.appendChild(el('h3',null,title));
     if(!rows.length){ sec.appendChild(el('p','sub','ไม่มีข้อมูล')); return sec; }
     var max = Math.max.apply(null, rows.map(function(x){ return x.n; })) || 1, ul = el('ul','rtbl');
     rows.forEach(function(x){
-      var li = el('li'); li.appendChild(el('span','nm',x.label));
+      var li = el('li');
+      if(x.sub != null){ var nm2 = el('span','nm two'); nm2.appendChild(el('span','bld',x.sub)); nm2.appendChild(el('span',null,x.label)); li.appendChild(nm2); }
+      else li.appendChild(el('span','nm',x.label));
       var bar = el('span','bar'), i = el('i'); i.style.width = Math.round(x.n / max * 100) + '%'; bar.appendChild(i); li.appendChild(bar);
       li.appendChild(el('span','v', x.n + ' ' + unit)); li.appendChild(el('span','v h', x.h != null ? x.h + ' ชม.' : '')); ul.appendChild(li);
     });
@@ -1230,7 +1232,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       body.appendChild(rpTable('แยกตามเดือน', rows, 'รายการ'));
     } /* monthly report: no per-day breakdown */
     function sortDesc(a){ return a.sort(function(x,y){ return y.n - x.n; }); }
-    body.appendChild(rpTable('แยกตามห้อง', sortDesc(tally(ap, function(b){ return [(b.buildingShort ? b.buildingShort + ' ' : '') + (b.roomName || b.room)]; })), 'รายการ'));
+    var roomRows = tally(ap, function(b){ return [(b.buildingShort || 'ไม่ระบุอาคาร') + '\u0001' + (b.roomName || b.room)]; }).map(function(x){ var k = x.label.split('\u0001'); return {sub:k[0], label:k[1], n:x.n, h:x.h}; });
+    roomRows.sort(function(a,b){ return a.sub.localeCompare(b.sub, 'th') || b.n - a.n; });
+    body.appendChild(rpTable('แยกตามห้อง', roomRows, 'รายการ', ['อาคาร','ห้อง']));
     body.appendChild(rpTable('แยกตามหน่วยงาน', sortDesc(tally(ap, function(b){ return [b.unit || 'ไม่ระบุ']; })), 'รายการ'));
     body.appendChild(rpTable('แยกตามผู้จอง', sortDesc(tally(ap, function(b){ return [b.name || 'ไม่ระบุ']; })).slice(0,10), 'รายการ'));
   }
