@@ -925,6 +925,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     row('ห้อง', roomName(b) + (rm && rm.seats ? ' (' + rm.seats + ' ที่นั่ง)' : ''), true);
     row('วันที่', thDate(b.date), true);
     row('เวลา', tl(b.start)+'–'+tl(b.end)+' น.', true);
+    row('หัวข้อการประชุม', b.title || '-');
     row('หน่วยงาน', b.unit || '-');
     row('ผู้จอง', b.name || '-');
     if(b.count) row('ผู้เข้าร่วม', b.count + ' คน');
