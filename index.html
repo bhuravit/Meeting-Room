@@ -920,14 +920,13 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       if(typeof val === 'string') dd.textContent = val; else dd.appendChild(val);
       body.appendChild(dt); body.appendChild(dd);
     }
-    row('สถานะ', el('span','chip '+b.status, ST[b.status]||b.status));
+    row('หัวข้อการประชุม', b.title || '-');
     row('อาคาร', bl ? bl.name : (b.buildingShort || '-'));
     row('ห้อง', roomName(b) + (rm && rm.seats ? ' (' + rm.seats + ' ที่นั่ง)' : ''), true);
     row('วันที่', thDate(b.date), true);
     row('เวลา', tl(b.start)+'–'+tl(b.end)+' น.', true);
-    row('หัวข้อการประชุม', b.title || '-');
-    row('หน่วยงาน', b.unit || '-');
     row('ผู้จอง', b.name || '-');
+    row('หน่วยงาน', b.unit || '-');
     if(b.count) row('ผู้เข้าร่วม', b.count + ' คน');
     var eq = eqList(b);
     row('อุปกรณ์', eq.length ? eq.join(', ') : 'ไม่ขอใช้อุปกรณ์');
@@ -935,6 +934,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     if(b.coffeeAM) food.push('กาแฟ/ชา (เช้า)'); if(b.coffeePM) food.push('กาแฟ/ชา (บ่าย)'); if(b.lunch) food.push('อาหารกลางวัน');
     row('อาหาร/เครื่องดื่ม', food.length ? food.join(', ') : 'ไม่รับ');
     if(b.note) row('รายละเอียด', b.note);
+    row('สถานะ', el('span','chip '+b.status, ST[b.status]||b.status));
     var a = actions(b), box = $('#mActs'); box.innerHTML = '';
     while(a.firstChild) box.appendChild(a.firstChild);
   }
