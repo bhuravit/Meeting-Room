@@ -60,6 +60,7 @@ label.rf{max-width:100%;display:flex;flex-direction:row;align-items:center;gap:8
 .cal .none{font-size:11.5px;color:var(--muted);padding:0 4px}
 .brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .brand h1{margin:0}
+a.brand{color:inherit;text-decoration:none;cursor:pointer}a.brand:focus-visible{outline:3px solid var(--focus,#2F6FDE);outline-offset:3px}
 body:not(.gated) .brand{background:#fff;padding:8px 34px 8px 8px;border-radius:12px 12px 40px 12px;box-shadow:0 1px 3px rgba(20,30,50,.08)}body:not(.gated) .brand h1{color:#1A2230}body:not(.gated) .logo{padding:0 4px}
 body.gated .top{justify-content:center}
 body.gated .brand{justify-content:center;flex-direction:column;gap:10px;text-align:center}
@@ -207,10 +208,10 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 <div id="toast" class="toast" role="alert" aria-live="assertive" hidden></div>
 <div class="wrap">
   <header class="top">
-    <div class="brand">
+    <a class="brand" href="#main" aria-label="กลับหน้าแรกการจอง" title="กลับหน้าแรกการจอง">
       <img class="logo" src="logo.png" alt="โลโก้สถาบันพระบรมราชชนก สภากาชาดไทย ศรีสวรินทิรา" width="154" height="65">
       <h1 id="pageTitle">ระบบจองห้องประชุม</h1>
-    </div>
+    </a>
     <nav class="nav" aria-label="เมนู">
       <span class="me" id="meChip" hidden>
         <img id="meImg" alt="" width="28" height="28">
@@ -1441,6 +1442,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   $('#vdate').addEventListener('change', function(){ if($('#vdate').value){ date = $('#vdate').value; $('#f-date').value = date; render(); } });
   [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).addEventListener('click', function(){ vmode = m[1]; render(); }); });
   window.addEventListener('hashchange', route);
+  document.querySelector('a.brand').addEventListener('click', function(){ if(!gated()){ roomFilter = ''; goDay(todayStr()); } }); /* logo/title: back to today's booking page */
 
   /* ---------- start ---------- */
   /* ---------- own profile / password ---------- */
