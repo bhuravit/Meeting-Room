@@ -77,7 +77,7 @@ a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.sm{min-height:30px;padding:3px 10px;font-size:13px}
 .btn.ok{border-color:var(--ok);color:var(--ok)}
-.btn.bad{border-color:var(--err);color:var(--err)}.btn.bad.armed,.btn.bad.armed:hover{background:#C62828;border-color:#C62828;color:#fff;font-weight:600}
+.btn.bad{border-color:var(--err);color:var(--err)}.btn.warn{border-color:#B86E00;color:#8A4B00}.btn.warn.armed,.btn.warn.armed:hover{background:#B86E00;border-color:#B86E00;color:#fff;font-weight:600}.btn.bad.armed,.btn.bad.armed:hover{background:#C62828;border-color:#C62828;color:#fff;font-weight:600}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
 .btn.busy{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;opacity:1}
 .btn:active:not([disabled]){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -174,7 +174,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .chip{font-size:12px;padding:1px 9px;border-radius:99px;border:1px solid;white-space:nowrap}
 .chip.approved{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
 .chip.pending{background:var(--wait-bg);color:var(--wait);border-color:var(--wait)}
-.chip.rejected,.chip.cancelled{background:var(--off-bg);color:var(--off);border-color:var(--line)}
+.chip.noshow{background:#FCE9D4;color:#8A4B00;border-color:#E0B27A}.bk.noshow{opacity:.7;border-style:solid}.chip.rejected,.chip.cancelled{background:var(--off-bg);color:var(--off);border-color:var(--line)}
 .acts{display:flex;flex-wrap:wrap;gap:6px}
 .empty{margin:0;font-size:13px;color:var(--muted)}
 .mono{font-variant-numeric:tabular-nums}
@@ -411,7 +411,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 <script>
 (function(){
   var N = 27; /* 30-minute slots from 07:00; 27 slots end at 20:30 */
-  var ST = {pending:'รอการอนุมัติ',approved:'อนุมัติ',rejected:'ไม่อนุมัติ',cancelled:'ยกเลิก'};
+  var ST = {pending:'รอการอนุมัติ',approved:'อนุมัติ',rejected:'ไม่อนุมัติ',cancelled:'ยกเลิก',noshow:'ไม่มาใช้งาน'};
   var THD = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   var THM = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   var $ = function(s){ return document.querySelector(s); };
@@ -495,7 +495,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
 
   /* ---------- data layer ---------- */
-  function blocking(b){ return b.status === 'pending' || b.status === 'approved'; }
+  function blocking(b){ return b.status === 'pending' || b.status === 'approved' || b.status === 'noshow'; }
   function clash(list, b){
     return list.filter(function(x){ return blocking(x) && x.building === b.building && x.room === b.room && x.date === b.date && x.start < b.end && b.start < x.end; });
   }
@@ -734,7 +734,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var k = el('button','bk '+b.status+(selected===b.id?' sel':'')); k.type='button';
       k.style.gridColumn = String(ci+2); k.style.gridRow = (b.start+2)+' / '+(b.end+2+(b.end>=N?1:0)); /* a booking that ends at closing time also fills the closing row */
       k.appendChild(el('b',null,b.title));
-      k.appendChild(el('span',null,tl(b.start)+'–'+tl(b.end)+(b.status==='pending' ? ' · รออนุมัติ' : '')));
+      k.appendChild(el('span',null,tl(b.start)+'–'+tl(b.end)+(b.status==='pending' ? ' · รออนุมัติ' : b.status==='noshow' ? ' · ไม่มาใช้งาน' : '')));
       if(b.name) k.appendChild(el('span',null,'ผู้จอง: '+b.name));
       if(b.unit) k.appendChild(el('span',null,b.unit));
       paint(k, b.unit);
@@ -801,7 +801,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     k.appendChild(el('b',null, roomShort(b)));
     k.appendChild(el('span',null, tl(b.start) + '–' + tl(b.end)));
     paint(k, b.unit);
-    k.title = b.title + ' · ' + (b.unit || '') + ' · ผู้จอง: ' + (b.name || '-') + (b.status === 'pending' ? ' · รออนุมัติ' : '');
+    k.title = b.title + ' · ' + (b.unit || '') + ' · ผู้จอง: ' + (b.name || '-') + (b.status === 'pending' ? ' · รออนุมัติ' : b.status === 'noshow' ? ' · ไม่มาใช้งาน' : '');
     k.addEventListener('click', function(){ openDetail(b.id); });
     return k;
   }
@@ -872,10 +872,10 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var box = el('div','acts');
     function mk(label, cls, status){
       var key = b.id+':'+status;
-      var isArmed = armed === key && (status==='cancelled' || status==='rejected');
+      var isArmed = armed === key && (status==='cancelled' || status==='rejected' || status==='noshow');
       var btn = el('button','btn sm '+cls+(isArmed?' armed':''), isArmed ? 'ยืนยัน: '+label+' ?' : label); btn.type='button';
       btn.addEventListener('click', function(){
-        if(status==='cancelled' || status==='rejected'){
+        if(status==='cancelled' || status==='rejected' || status==='noshow'){
           if(armed !== key){ armed = key; clearTimeout(armTimer); armTimer = setTimeout(function(){ armed = null; render(); }, 6000); render(); return; }
           armed = null;
         }
@@ -885,7 +885,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       box.appendChild(btn);
     }
     if(canEdit && b.status==='pending'){ mk('อนุมัติ','ok','approved'); mk('ไม่อนุมัติ','bad','rejected'); }
-    if(canEdit && b.status==='approved'){ mk('ยกเลิก','bad','cancelled'); }
+    if(canEdit && b.status==='approved'){ mk('ไม่มาใช้งานตามเวลา','warn','noshow'); mk('ยกเลิก','bad','cancelled'); }
+    else if(canEdit && b.status==='noshow'){ mk('คืนสถานะเป็นอนุมัติ','ok','approved'); mk('ยกเลิก','bad','cancelled'); }
     else if(!canEdit && b.createdBy===me && blocking(b)){ mk('ยกเลิกการจอง','bad','cancelled'); }
     return box;
   }
@@ -1162,7 +1163,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   /* ---------- usage report (admin) ---------- */
   var rpMode = 'month', rpRows = [], rpTitle = '';
   var TH_M = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  var ST_TH = {approved:'อนุมัติแล้ว', pending:'รออนุมัติ', rejected:'ไม่อนุมัติ', cancelled:'ยกเลิก'};
+  var ST_TH = {approved:'อนุมัติแล้ว', pending:'รออนุมัติ', rejected:'ไม่อนุมัติ', cancelled:'ยกเลิก', noshow:'ไม่มาใช้งานตามเวลา'};
   function rpSay(t, kind){ var m = $('#rpMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
   function rpInit(){
     var now = new Date(), y = now.getFullYear();
@@ -1214,12 +1215,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   function renderReport(){
     var body = $('#rpBody'); body.innerHTML = '';
     var ap = rpRows.filter(function(b){ return b.status === 'approved'; });
-    var cnt = {approved:0, pending:0, rejected:0, cancelled:0}; rpRows.forEach(function(b){ cnt[b.status]++; });
+    var cnt = {approved:0, pending:0, rejected:0, cancelled:0, noshow:0}; rpRows.forEach(function(b){ cnt[b.status]++; });
     var hrs = ap.reduce(function(a,b){ return a + (b.end - b.start); }, 0) / 2;
     var ppl = ap.reduce(function(a,b){ return a + (b.count || 0); }, 0);
     $('#rpCsv').disabled = !rpRows.length;
     var k = el('div','kpis');
-    [[ap.length,'การจองที่อนุมัติ (รายการ)'],[hrs,'ชั่วโมงใช้งานรวม'],[ppl,'ผู้เข้าร่วมรวม (คน)'],[cnt.pending,'รออนุมัติ'],[cnt.rejected + cnt.cancelled,'ไม่อนุมัติ/ยกเลิก']].forEach(function(x){
+    [[ap.length,'การจองที่อนุมัติ (รายการ)'],[hrs,'ชั่วโมงใช้งานรวม'],[ppl,'ผู้เข้าร่วมรวม (คน)'],[cnt.pending,'รออนุมัติ'],[cnt.rejected + cnt.cancelled,'ไม่อนุมัติ/ยกเลิก'],[cnt.noshow,'ไม่มาใช้งานตามเวลา']].forEach(function(x){
       var d = el('div','kpi'); d.appendChild(el('b',null,String(x[0]))); d.appendChild(el('span',null,x[1])); k.appendChild(d);
     });
     body.appendChild(el('h3',null,'สรุป ' + rpTitle)); body.appendChild(k);
@@ -1237,6 +1238,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     body.appendChild(rpTable('แยกตามห้อง', roomRows, 'รายการ', ['อาคาร','ห้อง']));
     body.appendChild(rpTable('แยกตามหน่วยงาน', sortDesc(tally(ap, function(b){ return [b.unit || 'ไม่ระบุ']; })), 'รายการ'));
     body.appendChild(rpTable('แยกตามผู้จอง', sortDesc(tally(ap, function(b){ return [b.name || 'ไม่ระบุ']; })).slice(0,10), 'รายการ'));
+    var ns = rpRows.filter(function(b){ return b.status === 'noshow'; });
+    if(ns.length){
+      body.appendChild(el('h3',null,'การไม่มาใช้งานตามเวลา'));
+      body.appendChild(rpTable('แยกตามหน่วยงาน', sortDesc(tally(ns, function(b){ return [b.unit || 'ไม่ระบุ']; })), 'รายการ'));
+      body.appendChild(rpTable('แยกตามผู้จอง', sortDesc(tally(ns, function(b){ return [b.name || 'ไม่ระบุ']; })).slice(0,10), 'รายการ'));
+    }
   }
   function csvCell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
   $('#rpCsv').addEventListener('click', function(){
