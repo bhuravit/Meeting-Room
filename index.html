@@ -111,11 +111,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface)}
 .kpi b{display:block;font-size:24px;font-variant-numeric:tabular-nums}.kpi span{font-size:12px;opacity:.8}
 .rtbl{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
-.rtbl li{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,32%) 12em;gap:14px;align-items:center;font-size:13px;padding:7px 2px;border-bottom:1px solid var(--line)}.rtbl li:last-child{border-bottom:0}
+.rtbl li{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,32%) 6em 6em;gap:14px;align-items:center;font-size:13px;padding:7px 2px;border-bottom:1px solid var(--line)}.rtbl li:last-child{border-bottom:0}
 .rtbl .nm{overflow-wrap:anywhere}.rtbl .bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.rtbl .bar i{display:block;height:100%;background:var(--accent)}
 .rtbl .v{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .rsec{margin-bottom:18px}.rsec h3{margin:6px 0 4px;padding-bottom:6px;border-bottom:2px solid var(--line)}
-@media (max-width:560px){.rtbl li{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}.rtbl .bar{grid-column:1/-1;order:3}}
+@media (max-width:560px){.rtbl li{grid-template-columns:minmax(0,1fr) 5.5em 4.5em;gap:4px 8px}.rtbl .bar{grid-column:1/-1;order:3}}
 .tab{border:1px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:6px;cursor:pointer;min-height:38px;text-align:left;min-width:0;overflow-wrap:anywhere}
 .tab:hover{background:var(--hover)}
 .tab{border-left:5px solid var(--tb,var(--accent))}
@@ -1200,7 +1200,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     rows.forEach(function(x){
       var li = el('li'); li.appendChild(el('span','nm',x.label));
       var bar = el('span','bar'), i = el('i'); i.style.width = Math.round(x.n / max * 100) + '%'; bar.appendChild(i); li.appendChild(bar);
-      li.appendChild(el('span','v', x.n + ' ' + unit + (x.h != null ? ' · ' + x.h + ' ชม.' : ''))); ul.appendChild(li);
+      li.appendChild(el('span','v', x.n + ' ' + unit)); li.appendChild(el('span','v h', x.h != null ? x.h + ' ชม.' : '')); ul.appendChild(li);
     });
     sec.appendChild(ul); return sec;
   }
