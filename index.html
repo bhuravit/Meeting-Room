@@ -619,7 +619,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     sel.value = Array.prototype.some.call(sel.options, function(o){ return o.value === v; }) ? v : '';
   }
   $('#f-on').addEventListener('change', function(){ $('#f-on-wrap').hidden = !$('#f-on').checked; });
-  $('#f-bld').addEventListener('change', function(){ pickEnd = false; syncRooms(); curB = $('#f-bld').value; render(); });
+  $('#f-bld').addEventListener('change', function(){ pickEnd = false; $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; say(''); syncRooms(); curB = $('#f-bld').value; render(); });
   /* keep the draft from overlapping existing bookings: trim the end to the next booking, or flag a start that lands inside one */
   var toastTimer;
   function warn(t){ var e = $('#toast'); e.textContent = '⚠ ' + t; e.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function(){ e.hidden = true; }, 4500); }
@@ -687,7 +687,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       btn.setAttribute('aria-selected', b.id === curB ? 'true' : 'false');
       btn.appendChild(document.createTextNode(b.name));
       btn.appendChild(el('small',null, b.rooms.length+' ห้อง · '+(vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้')+'มีจอง '+n+' รายการ'));
-      btn.addEventListener('click', function(){ if(roomFilter && roomFilter.split('|')[0] !== b.id) roomFilter = ''; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
+      btn.addEventListener('click', function(){ if(roomFilter && roomFilter.split('|')[0] !== b.id) roomFilter = ''; if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); } /* switching building clears the time picked on the other one */
+        curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
       t.appendChild(btn);
     });
   }
