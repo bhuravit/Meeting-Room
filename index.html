@@ -309,12 +309,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
           <label><input type="radio" name="f-ca" value="0" checked>ไม่รับ</label><label><input type="radio" name="f-ca" value="1">รับ</label></div>
         <div class="full opt"><span class="ol">อาหารกลางวัน</span>
           <label><input type="radio" name="f-lunch" value="0" checked>ไม่รับ</label><label><input type="radio" name="f-lunch" value="1">รับ</label></div>
-        <div class="full opt eq"><span class="ol">อุปกรณ์</span>
-          <label><input type="checkbox" name="f-eq" value="pc">Computer/Notebook</label>
-          <label><input type="checkbox" name="f-eq" value="lcd">LCD Projector</label>
-          <label><input type="checkbox" name="f-eq" value="viz">เครื่องฉายภาพ 3 มิติ</label>
-          <label><input type="checkbox" name="f-eq" value="sound">ระบบเสียง</label>
-          <label><input type="checkbox" name="f-eq" value="online" id="f-on">Online</label></div>
+        <div class="full opt eq" id="f-eq-box"><span class="ol">อุปกรณ์</span></div>
         <label class="full" id="f-on-wrap" hidden>รายละเอียดการประชุม Online<input id="f-on-text" type="text" placeholder="เช่น Zoom, Teams, ลิงก์ห้องประชุม"></label>        <p class="msg" id="msg" role="status" aria-live="polite"></p>
         <button class="btn primary full" id="submit" type="submit">ส่งคำขอจอง</button>
       </form>
@@ -326,6 +321,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     <div class="tabs" id="adminTabs" role="tablist" aria-label="เมนูผู้ดูแล">
       <button class="tab" type="button" role="tab" id="atUsers" aria-selected="true" aria-controls="secUsers">เพิ่มผู้ใช้งาน<small>เพิ่ม ลบ ตั้งสิทธิ์ผู้ดูแล</small></button>
       <button class="tab" type="button" role="tab" id="atVenues" aria-selected="false" aria-controls="secVenues">เพิ่มอาคารห้องประชุม<small>เพิ่ม แก้ไข ลบ อาคารและห้อง</small></button>
+      <button class="tab" type="button" role="tab" id="atEquip" aria-selected="false" aria-controls="secEquip">เพิ่มอุปกรณ์สื่อโสต<small>เพิ่ม แก้ไข ลบ อุปกรณ์ที่ให้เลือกจอง</small></button>
       <button class="tab" type="button" role="tab" id="atReport" aria-selected="false" aria-controls="secReport">รายงานสรุปการใช้งาน<small>รายเดือน รายปี</small></button>
     </div>
     <section class="card stack" id="secUsers" role="tabpanel" aria-labelledby="atUsers">
@@ -384,6 +380,18 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       <p class="msg" id="cfgMsg" role="status" aria-live="polite"></p>
       <div class="side" id="cfgList"></div>
       <button class="btn" id="addB" type="button">+ เพิ่มอาคาร</button>
+    </section>
+    <section class="card stack" id="secEquip" role="tabpanel" aria-labelledby="atEquip" hidden>
+      <div class="card-head">
+        <h2>อุปกรณ์สื่อโสต</h2>
+        <div class="acts">
+          <button class="btn sm" id="eqReset" type="button" disabled>ยกเลิกการแก้ไข</button>
+          <button class="btn sm primary" id="eqSave" type="button" disabled>บันทึกการเปลี่ยนแปลง</button>
+        </div>
+      </div>
+      <p class="msg" id="eqMsg" role="status" aria-live="polite"></p>
+      <div class="side" id="eqList"></div>
+      <button class="btn" id="addEq" type="button">+ เพิ่มอุปกรณ์</button>
     </section>
   </div>
 </div>
@@ -545,13 +553,15 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var rs = await Promise.all([
       sb.from('bookings').select(auth === 'in' ? '*' : BCOLS).order('date').limit(1000),
       sb.from('decisions').select('booking_id,status').limit(1000),
-      sb.from('venues_config').select('buildings').eq('id',1).maybeSingle()
+      sb.from('venues_config').select('buildings,equipment').eq('id',1).maybeSingle()
     ]);
     if(rs[0].error || rs[1].error){ loadErr = 'อ่านข้อมูลไม่ได้ในขณะนี้'; render(); return; }
     loadErr = '';
     rawB = rs[0].data.map(fromRow);
     dec = {}; rs[1].data.forEach(function(d){ dec[d.booking_id] = d; });
     var bd = rs[2].data && rs[2].data.buildings;
+    var ed = rs[2].data && rs[2].data.equipment;
+    EQUIP = clone(Array.isArray(ed) && ed.length ? ed : DEFAULT_EQ); renderEqForm(); if(!eqDirty){ eqDraft = null; }
     if(Array.isArray(bd) && bd.length) BUILDINGS = clone(bd);
     else if(!rs[2].error && !venuesLoaded) BUILDINGS = clone(DEFAULT_B); /* never fall back to the defaults on a read error */
     if(Array.isArray(bd) && bd.length) venuesLoaded = true;
@@ -623,13 +633,28 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
 
   var radio = function(n){ var c = document.querySelector('input[name='+n+']:checked'); return !!c && c.value === '1'; };
-  var EQ = {pc:'Computer/Notebook', nb:'Computer/Notebook', lcd:'LCD Projector', viz:'เครื่องฉายภาพ 3 มิติ', sound:'ระบบเสียง'};
+  var DEFAULT_EQ = [{id:'pc',name:'Computer/Notebook'},{id:'lcd',name:'LCD Projector'},{id:'viz',name:'เครื่องฉายภาพ 3 มิติ'},{id:'sound',name:'ระบบเสียง'},{id:'online',name:'Online'}];
+  var LEGACY_EQ = {nb:'Computer/Notebook'};
+  var EQUIP = clone(DEFAULT_EQ);
+  function eqName(k){ var f = EQUIP.filter(function(e){ return e.id === k; })[0]; return f ? f.name : (LEGACY_EQ[k] || ''); }
+  function renderEqForm(){
+    var box = $('#f-eq-box'), keep = {};
+    Array.prototype.forEach.call(box.querySelectorAll('input:checked'), function(c){ keep[c.value] = 1; });
+    box.innerHTML = '<span class="ol">อุปกรณ์</span>';
+    EQUIP.forEach(function(e){
+      var l = document.createElement('label'), c = document.createElement('input');
+      c.type = 'checkbox'; c.name = 'f-eq'; c.value = e.id; c.checked = !!keep[e.id];
+      if(e.id === 'online'){ c.id = 'f-on'; c.addEventListener('change', function(){ $('#f-on-wrap').hidden = !c.checked; }); }
+      l.appendChild(c); l.appendChild(document.createTextNode(e.name)); box.appendChild(l);
+    });
+    var on = $('#f-on'); $('#f-on-wrap').hidden = !(on && on.checked);
+  }
+  renderEqForm();
   function unitValue(){ return $('#f-unit').value; }
   function setUnit(v){
     var sel = $('#f-unit');
     sel.value = Array.prototype.some.call(sel.options, function(o){ return o.value === v; }) ? v : '';
   }
-  $('#f-on').addEventListener('change', function(){ $('#f-on-wrap').hidden = !$('#f-on').checked; });
   $('#f-bld').addEventListener('change', function(){ pickEnd = false; $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; say(''); syncRooms(); curB = $('#f-bld').value; render(); });
   /* keep the draft from overlapping existing bookings: trim the end to the next booking, or flag a start that lands inside one */
   var toastTimer;
@@ -912,8 +937,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
 
   function eqList(b){
-    var eq = (b.equip||[]).filter(function(k){ return EQ[k]; }).map(function(k){ return EQ[k]; }).filter(function(n,i,a){ return a.indexOf(n) === i; }); /* old bookings may carry both pc and nb */
-    if((b.equip||[]).indexOf('online') >= 0) eq.push('Online'+(b.onlineDetail ? ' ('+b.onlineDetail+')' : ''));
+    var eq = (b.equip||[]).filter(function(k){ return k !== 'online' && eqName(k); }).map(eqName).filter(function(n,i,a){ return a.indexOf(n) === i; }); /* old bookings may carry both pc and nb */
+    if((b.equip||[]).indexOf('online') >= 0) eq.push((eqName('online') || 'Online')+(b.onlineDetail ? ' ('+b.onlineDetail+')' : ''));
     return eq;
   }
   function lineP(label, value){
@@ -1004,11 +1029,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 
   function resetDraft(){ draft = clone(BUILDINGS); dirty = false; }
   var cfgDoneTimer; function markDirty(){ var sv0 = $('#cfgSave'); clearTimeout(cfgDoneTimer); sv0.classList.remove('done'); sv0.textContent = 'บันทึกการเปลี่ยนแปลง'; dirty = true; $('#cfgSave').disabled = false; $('#cfgReset').disabled = false; $('#cfgMsg').textContent = ''; $('#cfgMsg').className = 'msg'; }
-  function inp(label, val, cls, on, type){
+  function inp(label, val, cls, on, type, mk){
     var l = el('label', cls); l.appendChild(document.createTextNode(label));
     var i = document.createElement('input'); i.type = type || 'text'; i.value = val == null ? '' : val;
     if(type === 'number'){ i.min = '1'; i.inputMode = 'numeric'; }
-    i.addEventListener('input', function(){ on(i.value); markDirty(); });
+    i.addEventListener('input', function(){ on(i.value); (mk || markDirty)(); });
     l.appendChild(i); return l;
   }
   function armBtn(label, key, fn){
@@ -1102,6 +1127,47 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var sv = $('#cfgSave'); sv.classList.add('done'); sv.textContent = '✓ บันทึกสำเร็จ';
       clearTimeout(cfgDoneTimer); cfgDoneTimer = setTimeout(function(){ sv.classList.remove('done'); sv.textContent = 'บันทึกการเปลี่ยนแปลง'; msg.textContent = ''; }, 4000);
     }catch(e){ $('#cfgSave').disabled = false; bad('บันทึกไม่สำเร็จ เฉพาะผู้มีสิทธิ์แก้ไขเท่านั้นที่เปลี่ยนค่านี้ได้'); }
+  });
+
+  /* ---------- AV equipment (admin) ---------- */
+  var eqDraft = null, eqDirty = false, eqArm = null, eqTimer, eqDoneTimer;
+  function eqMark(){ var sv = $('#eqSave'); clearTimeout(eqDoneTimer); sv.classList.remove('done'); sv.textContent = 'บันทึกการเปลี่ยนแปลง'; eqDirty = true; sv.disabled = false; $('#eqReset').disabled = false; $('#eqMsg').textContent = ''; $('#eqMsg').className = 'msg'; }
+  function renderEq(){
+    if(!eqDraft) eqDraft = clone(EQUIP);
+    var box = $('#eqList'); box.innerHTML = '';
+    eqDraft.forEach(function(e,i){
+      var row = el('div','rrow');
+      row.appendChild(inp('ชื่ออุปกรณ์' + (e.id === 'online' ? ' (มีช่องกรอกรายละเอียด Online)' : ''), e.name, 'rn', function(v){ e.name = v; }, 'text', eqMark));
+      var ds = el('span','delslot');
+      if(eqDraft.length > 1){
+        var on = eqArm === e.id, b = el('button','btn sm bad', on ? 'ยืนยัน: ลบอุปกรณ์' : 'ลบอุปกรณ์'); b.type = 'button';
+        b.addEventListener('click', function(){
+          if(!on){ eqArm = e.id; clearTimeout(eqTimer); eqTimer = setTimeout(function(){ eqArm = null; renderEq(); }, 4000); renderEq(); return; }
+          eqArm = null; eqDraft.splice(i,1); eqMark(); renderEq();
+        });
+        ds.appendChild(b);
+      }
+      row.appendChild(ds); box.appendChild(row);
+    });
+    $('#eqSave').disabled = !eqDirty; $('#eqReset').disabled = !eqDirty;
+  }
+  $('#addEq').addEventListener('click', function(){ if(!eqDraft) eqDraft = clone(EQUIP); eqDraft.push({id:'e'+uid(), name:'อุปกรณ์ใหม่'}); eqMark(); renderEq(); });
+  $('#eqReset').addEventListener('click', function(){ eqDraft = null; eqDirty = false; renderEq(); $('#eqMsg').textContent = ''; });
+  $('#eqSave').addEventListener('click', async function(){
+    var msg = $('#eqMsg'), out = [];
+    function bad(t){ msg.textContent = t; msg.className = 'msg err'; }
+    for(var i=0;i<eqDraft.length;i++){
+      var n = (eqDraft[i].name||'').trim(); if(!n) return bad('กรุณากรอกชื่ออุปกรณ์ให้ครบ');
+      out.push({id:eqDraft[i].id, name:n});
+    }
+    $('#eqSave').disabled = true;
+    try{
+      if(!local){ var cr = await sb.from('venues_config').upsert({id:1, buildings:BUILDINGS, equipment:out, updated_by:me, updated_at:new Date().toISOString()}); if(cr.error) throw cr.error; }
+      EQUIP = clone(out); renderEqForm(); eqDirty = false; eqDraft = null; renderEq();
+      msg.textContent = '✓ บันทึกสำเร็จ'; msg.className = 'msg good';
+      var sv = $('#eqSave'); sv.classList.add('done'); sv.textContent = '✓ บันทึกสำเร็จ';
+      clearTimeout(eqDoneTimer); eqDoneTimer = setTimeout(function(){ sv.classList.remove('done'); sv.textContent = 'บันทึกการเปลี่ยนแปลง'; msg.textContent = ''; }, 4000);
+    }catch(e){ $('#eqSave').disabled = false; bad('บันทึกไม่สำเร็จ เฉพาะผู้มีสิทธิ์แก้ไขเท่านั้นที่เปลี่ยนค่านี้ได้'); }
   });
 
   /* ---------- user management (admin) ---------- */
@@ -1386,13 +1452,15 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   });
 
   function setAdminTab(name){
-    [['users','Users'],['venues','Venues'],['report','Report']].forEach(function(t){
+    [['users','Users'],['venues','Venues'],['equip','Equip'],['report','Report']].forEach(function(t){
       var on = t[0] === name; $('#sec' + t[1]).hidden = !on; $('#at' + t[1]).setAttribute('aria-selected', on ? 'true' : 'false');
     });
+    if(name === 'equip') renderEq();
     if(name === 'report') loadReport();
   }
   $('#atUsers').addEventListener('click', function(){ setAdminTab('users'); });
   $('#atVenues').addEventListener('click', function(){ setAdminTab('venues'); });
+  $('#atEquip').addEventListener('click', function(){ setAdminTab('equip'); });
   $('#atReport').addEventListener('click', function(){ setAdminTab('report'); });
 
   /* ---------- page shell ---------- */
