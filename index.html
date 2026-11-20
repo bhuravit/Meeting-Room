@@ -155,6 +155,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .msg.err{color:var(--err)}
 .msg.good{color:var(--ok);font-weight:600;font-size:14px}
 .btn.primary.done:disabled,.btn.primary.done,.btn.primary.done:hover{opacity:1;background:#1B8A5A;border-color:#1B8A5A;color:#fff}
+.ugrp{font-weight:700;font-size:.95rem;padding:6px 2px 0;border-bottom:2px solid var(--line,#d9dee8);margin-top:6px}
+.ugrp:first-child{margin-top:0}
 .list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
 .item{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .item.sel{border-color:var(--accent)}
@@ -1194,7 +1196,17 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#uCount').textContent = users.length ? '(' + users.length + ')' : '';
     var ul = $('#uList'); ul.innerHTML = '';
     if(!users.length) ul.appendChild(el('li','empty','ยังไม่มีผู้ใช้'));
-    users.forEach(function(u){
+    var order = Array.prototype.map.call($('#u-unit').options, function(o){ return o.value; }).filter(Boolean);
+    function gi(u){ var i = order.indexOf(u.unit); return i < 0 ? order.length : i; }
+    var sorted = users.map(function(u,i){ return {u:u, i:i}; }).sort(function(x,y){ return gi(x.u) - gi(y.u) || x.i - y.i; }).map(function(x){ return x.u; });
+    var lastG = null;
+    sorted.forEach(function(u){
+      var g = gi(u) < order.length ? u.unit : '';
+      if(g !== lastG){
+        lastG = g;
+        var cnt = sorted.filter(function(x){ return (gi(x) < order.length ? x.unit : '') === g; }).length;
+        var gh = el('li','ugrp'); gh.appendChild(document.createTextNode(g || 'ไม่ระบุหน่วยงาน')); gh.appendChild(el('span','mono',' (' + cnt + ')')); ul.appendChild(gh);
+      }
       var li = el('li','item'), row = el('div','row');
       row.appendChild(el('span','mono', u.full_name || (u.email||'').split('@')[0]));
       var chip = el('span','chip '+(u.isAdmin?'approved':'pending'), u.id === me ? (u.isAdmin ? 'ผู้ดูแล · คุณ' : 'คุณ') : (u.isAdmin ? 'ผู้ดูแล' : 'ผู้ใช้'));
