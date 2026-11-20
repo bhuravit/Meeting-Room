@@ -181,6 +181,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .notice[data-jump="1"]:hover{background:#FFE8A8}
 @keyframes bell{0%,60%,100%{transform:rotate(0)}65%{transform:rotate(14deg)}72%{transform:rotate(-12deg)}79%{transform:rotate(8deg)}86%{transform:rotate(-5deg)}}
 @media (prefers-reduced-motion:reduce){.notice[data-jump="1"]::before{animation:none}}
+.colsel{flex:0 0 170px}.colwrap{display:flex;align-items:center;gap:8px}.colwrap select{flex:1;min-width:0}.coldot{flex:none;width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 1px var(--line);display:inline-block}
 .colrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 10px}.colrow .cl{font-size:13px;color:var(--muted);margin-right:4px}.swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);padding:0;cursor:pointer;min-height:0}.swatch:hover{transform:scale(1.1)}.swatch.on{box-shadow:0 0 0 3px var(--ink)}.swatch.on::after{content:"✓";color:#fff;font-weight:700;text-shadow:0 0 2px rgba(0,0,0,.6)}
 .chip.rejected,.chip.cancelled{background:var(--off-bg);color:var(--off);border-color:var(--line)}
 .acts{display:flex;flex-wrap:wrap;gap:6px}
@@ -1027,17 +1028,15 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var head = el('div','rrow');
       head.appendChild(inp('ชื่ออาคาร', b.name, 'rn', function(v){ b.name = v; }));
       head.appendChild(inp('ชื่อย่อ (ใช้ในรายการ)', b.short, 'rw', function(v){ b.short = v; }));
+      var curK = b.color && PAL[b.color] ? b.color : (Object.keys(PAL).filter(function(k){ return PAL[k].bg === bcol(b).bg; })[0] || '');
+      var cl = el('label','colsel'); cl.appendChild(document.createTextNode('สีประจำอาคาร'));
+      var cw = el('span','colwrap'), dot = el('i','coldot'), csel = document.createElement('select');
+      Object.keys(PAL).forEach(function(k){ var o = el('option',null,PAL[k].n); o.value = k; csel.appendChild(o); });
+      csel.value = curK; dot.style.background = PAL[curK] ? PAL[curK].bg : '#999';
+      csel.addEventListener('change', function(){ b.color = csel.value; dot.style.background = PAL[csel.value].bg; markDirty(); });
+      cw.appendChild(dot); cw.appendChild(csel); cl.appendChild(cw); head.appendChild(cl);
       if(draft.length > 1) head.appendChild(armBtn('ลบอาคาร', 'b:'+b.id, function(){ draft.splice(bi,1); markDirty(); renderCfg(); }));
       card.appendChild(head);
-      var cr = el('div','colrow'); cr.appendChild(el('span','cl','สีอาคาร'));
-      var curK = b.color && PAL[b.color] ? b.color : (Object.keys(PAL).filter(function(k){ return PAL[k].bg === bcol(b).bg; })[0] || '');
-      Object.keys(PAL).forEach(function(k){
-        var sw = el('button','swatch' + (k === curK ? ' on' : '')); sw.type = 'button'; sw.title = PAL[k].n; sw.setAttribute('aria-label','สี' + PAL[k].n); sw.setAttribute('aria-pressed', k === curK ? 'true' : 'false');
-        sw.style.background = PAL[k].bg;
-        sw.addEventListener('click', function(){ b.color = k; markDirty(); renderCfg(); });
-        cr.appendChild(sw);
-      });
-      card.appendChild(cr);
       var rooms = el('div','rooms');
       b.rooms.forEach(function(r,ri){
         var row = el('div','rrow rrow-room');
