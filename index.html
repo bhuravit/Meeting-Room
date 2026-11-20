@@ -365,8 +365,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         <div class="seg" role="group" aria-label="ช่วงเวลา">
           <button type="button" class="btn sm" id="rpMonth" aria-pressed="true">รายเดือน</button>
           <button type="button" class="btn sm" id="rpYear" aria-pressed="false">รายปี</button>
+          <button type="button" class="btn sm" id="rpRange" aria-pressed="false">เลือกช่วงวันที่</button>
         </div>
         <label id="rpMonthWrap">เดือน<input type="month" id="rp-month"></label>
+        <label id="rpFromWrap" hidden>ตั้งแต่วันที่<input type="date" id="rp-from"></label>
+        <label id="rpToWrap" hidden>ถึงวันที่<input type="date" id="rp-to"></label>
         <label id="rpYearWrap" hidden>ปี (พ.ศ.)<select id="rp-year"></select></label>
         <button type="button" class="btn sm" id="rpCsv" disabled>ดาวน์โหลด CSV</button>
       </div>
@@ -1288,11 +1291,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#rp-month').value = y + '-' + pad(now.getMonth()+1);
     var ys = ''; for(var k = y; k >= y-5; k--) ys += '<option value="'+k+'">'+(k+543)+'</option>';
     $('#rp-year').innerHTML = ys;
+    $('#rp-from').value = y + '-' + pad(now.getMonth()+1) + '-01'; $('#rp-to').value = y + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate());
   }
   function rpSetMode(m){
     rpMode = m;
-    $('#rpMonth').setAttribute('aria-pressed', m === 'month' ? 'true' : 'false'); $('#rpYear').setAttribute('aria-pressed', m === 'year' ? 'true' : 'false');
-    $('#rpMonthWrap').hidden = m !== 'month'; $('#rpYearWrap').hidden = m !== 'year';
+    $('#rpMonth').setAttribute('aria-pressed', m === 'month' ? 'true' : 'false'); $('#rpYear').setAttribute('aria-pressed', m === 'year' ? 'true' : 'false'); $('#rpRange').setAttribute('aria-pressed', m === 'range' ? 'true' : 'false');
+    $('#rpMonthWrap').hidden = m !== 'month'; $('#rpYearWrap').hidden = m !== 'year'; $('#rpFromWrap').hidden = m !== 'range'; $('#rpToWrap').hidden = m !== 'range';
     loadReport();
   }
   function rpStatus(r){ return r.cancelled ? 'cancelled' : ((r.decisions && r.decisions.status) || 'pending'); }
@@ -1304,6 +1308,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       var p = ym.split('-'), y = +p[0], m = +p[1];
       from = ym + '-01'; to = ym + '-' + pad(new Date(y, m, 0).getDate());
       rpTitle = TH_M[m-1] + ' ' + (y+543);
+    } else if(rpMode === 'range'){
+      from = $('#rp-from').value; to = $('#rp-to').value;
+      if(!from || !to) return;
+      if(from > to){ rpRows = []; $('#rpBody').innerHTML = ''; $('#rpCsv').disabled = true; rpSay('วันที่เริ่มต้นต้องไม่เลยวันที่สิ้นสุด','err'); return; }
+      var thd = function(d){ var q = d.split('-'); return (+q[2]) + ' ' + TH_M[+q[1]-1] + ' ' + (+q[0]+543); };
+      rpTitle = thd(from) + ' – ' + thd(to);
     } else { from = yr + '-01-01'; to = yr + '-12-31'; rpTitle = 'ปี ' + (yr+543); }
     rpSay('กำลังโหลด…'); $('#rpCsv').disabled = true;
     var r = await sb.from('bookings').select(BCOLS + ',decisions(status)').gte('date', from).lte('date', to).order('date').order('start_slot').limit(5000);
@@ -1366,12 +1376,15 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     })).map(function(r){ return r.map(csvCell).join(','); });
     var blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = 'รายงานการใช้ห้อง-' + (rpMode === 'month' ? $('#rp-month').value : $('#rp-year').value) + '.csv';
+    a.download = 'รายงานการใช้ห้อง-' + (rpMode === 'month' ? $('#rp-month').value : rpMode === 'range' ? $('#rp-from').value + '_' + $('#rp-to').value : $('#rp-year').value) + '.csv';
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   });
   rpInit();
   $('#rpMonth').addEventListener('click', function(){ rpSetMode('month'); });
   $('#rpYear').addEventListener('click', function(){ rpSetMode('year'); });
+  $('#rpRange').addEventListener('click', function(){ rpSetMode('range'); });
+  $('#rp-from').addEventListener('change', loadReport);
+  $('#rp-to').addEventListener('change', loadReport);
   $('#rp-month').addEventListener('change', loadReport);
   $('#rp-year').addEventListener('change', loadReport);
 
