@@ -155,8 +155,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .msg.err{color:var(--err)}
 .msg.good{color:var(--ok);font-weight:600;font-size:14px}
 .btn.primary.done:disabled,.btn.primary.done,.btn.primary.done:hover{opacity:1;background:#1B8A5A;border-color:#1B8A5A;color:#fff}
-.ugrp{font-weight:700;font-size:.95rem;padding:6px 2px 0;border-bottom:2px solid var(--line,#d9dee8);margin-top:6px}
-.ugrp:first-child{margin-top:0}
+.folder>details{border:1px solid var(--line,#d9dee8);border-radius:12px;background:#fff}
+.folder>details>summary{cursor:pointer;font-weight:700;padding:12px 14px;list-style:none;display:flex;gap:6px;align-items:center}
+.folder>details>summary::-webkit-details-marker{display:none}
+.folder>details>summary::before{content:'\25B8';display:inline-block;transition:transform .15s}
+.folder>details[open]>summary::before{transform:rotate(90deg)}
+.folder>details>.list{padding:0 12px 12px}
 .list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
 .item{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .item.sel{border-color:var(--accent)}
@@ -1173,7 +1177,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   });
 
   /* ---------- user management (admin) ---------- */
-  var users = [], uArm = null, uTimer = null, uEdit = null;
+  var users = [], uOpen = {}, uArm = null, uTimer = null, uEdit = null;
   function uSay(t, kind){ var m = $('#uMsg'); m.textContent = t; m.className = 'msg ' + (kind||''); }
   var U_ERR = {exists:'อีเมลนี้มีบัญชีอยู่แล้ว', domain:'เพิ่มได้เฉพาะอีเมลของสถาบัน', self:'ไม่สามารถทำรายการนี้กับบัญชีของตัวเองได้', forbidden:'เฉพาะผู้ดูแลเท่านั้น', invalid_input:'กรอกข้อมูลไม่ครบหรือรหัสผ่านสั้นเกินไป'};
   async function callUsers(body){
@@ -1197,21 +1201,27 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var ul = $('#uList'); ul.innerHTML = '';
     if(!users.length) ul.appendChild(el('li','empty','ยังไม่มีผู้ใช้'));
     var order = Array.prototype.map.call($('#u-unit').options, function(o){ return o.value; }).filter(Boolean);
-    function gi(u){ var i = order.indexOf(u.unit); return i < 0 ? order.length : i; }
+    function gkey(u){ return u.isAdmin ? '\u0001admin' : (order.indexOf(u.unit) >= 0 ? u.unit : ''); }
+    function gi(u){ return u.isAdmin ? -1 : (order.indexOf(u.unit) < 0 ? order.length : order.indexOf(u.unit)); }
     var sorted = users.map(function(u,i){ return {u:u, i:i}; }).sort(function(x,y){ return gi(x.u) - gi(y.u) || x.i - y.i; }).map(function(x){ return x.u; });
-    var lastG = null;
+    var lastG = null, tgt = ul;
     sorted.forEach(function(u){
-      var g = gi(u) < order.length ? u.unit : '';
+      var g = gkey(u);
       if(g !== lastG){
         lastG = g;
-        var cnt = sorted.filter(function(x){ return (gi(x) < order.length ? x.unit : '') === g; }).length;
-        var gh = el('li','ugrp'); gh.appendChild(document.createTextNode(g || 'ไม่ระบุหน่วยงาน')); gh.appendChild(el('span','mono',' (' + cnt + ')')); ul.appendChild(gh);
+        var cnt = sorted.filter(function(x){ return gkey(x) === g; }).length;
+        var fl = el('li','folder'), dt = document.createElement('details');
+        dt.open = g === '\u0001admin' ? uOpen[g] !== false : !!uOpen[g];
+        if(uEdit && sorted.some(function(x){ return x.id === uEdit && gkey(x) === g; })) dt.open = true;
+        dt.addEventListener('toggle', function(){ uOpen[g] = dt.open; });
+        var sm = document.createElement('summary'); sm.appendChild(document.createTextNode((g === '\u0001admin' ? 'ผู้ดูแลระบบ' : g || 'ไม่ระบุหน่วยงาน') + ' ')); sm.appendChild(el('span','mono','(' + cnt + ')'));
+        dt.appendChild(sm); tgt = el('ul','list'); dt.appendChild(tgt); fl.appendChild(dt); ul.appendChild(fl);
       }
       var li = el('li','item'), row = el('div','row');
       row.appendChild(el('span','mono', u.full_name || (u.email||'').split('@')[0]));
       var chip = el('span','chip '+(u.isAdmin?'approved':'pending'), u.id === me ? (u.isAdmin ? 'ผู้ดูแล · คุณ' : 'คุณ') : (u.isAdmin ? 'ผู้ดูแล' : 'ผู้ใช้'));
       row.appendChild(chip); li.appendChild(row);
-      if(uEdit === u.id){ li.appendChild(editForm(u)); ul.appendChild(li); return; }
+      if(uEdit === u.id){ li.appendChild(editForm(u)); tgt.appendChild(li); return; }
       var eb = el('button','btn sm','แก้ไขข้อมูล / รหัสผ่าน'); eb.type = 'button';
       eb.addEventListener('click', function(){ uEdit = u.id; uArm = null; uSay(''); renderUsers(); });
       if(u.id === me){ var own = el('div','acts'); own.appendChild(eb); li.appendChild(own); }
@@ -1230,7 +1240,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         });
         box.appendChild(eb); box.appendChild(b1); box.appendChild(b2); li.appendChild(box);
       }
-      ul.appendChild(li);
+      tgt.appendChild(li);
     });
   }
   function editForm(u){
