@@ -930,10 +930,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     function row(label, val, hl){
       var dt = el('dt',hl ? 'hl' : null,label), dd = el('dd',hl ? 'hl' : null);
       if(typeof val === 'string') dd.textContent = val; else dd.appendChild(val);
-      body.appendChild(dt); body.appendChild(dd);
+      body.appendChild(dt); body.appendChild(dd); return dd;
     }
     row('หัวข้อการประชุม', b.title || '-');
-    row('อาคาร', bl ? bl.name : (b.buildingShort || '-'));
+    var bdd = row('อาคาร', bl ? bl.name : (b.buildingShort || '-'), true);
+    if(bl){ var bc = bcol(bl); bdd.style.background = bc.bg; bdd.style.color = bc.fg; bdd.style.borderLeftColor = 'rgba(0,0,0,.28)'; }
     row('ห้อง', roomName(b) + (rm && rm.seats ? ' (' + rm.seats + ' ที่นั่ง)' : ''), true);
     row('วันที่', thDate(b.date), true);
     row('เวลา', tl(b.start)+'–'+tl(b.end)+' น.', true);
