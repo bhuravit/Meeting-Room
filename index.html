@@ -181,6 +181,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .notice[data-jump="1"]:hover{background:#FFE8A8}
 @keyframes bell{0%,60%,100%{transform:rotate(0)}65%{transform:rotate(14deg)}72%{transform:rotate(-12deg)}79%{transform:rotate(8deg)}86%{transform:rotate(-5deg)}}
 @media (prefers-reduced-motion:reduce){.notice[data-jump="1"]::before{animation:none}}
+.colrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 10px}.colrow .cl{font-size:13px;color:var(--muted);margin-right:4px}.swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);padding:0;cursor:pointer;min-height:0}.swatch:hover{transform:scale(1.1)}.swatch.on{box-shadow:0 0 0 3px var(--ink)}.swatch.on::after{content:"✓";color:#fff;font-weight:700;text-shadow:0 0 2px rgba(0,0,0,.6)}
 .chip.rejected,.chip.cancelled{background:var(--off-bg);color:var(--off);border-color:var(--line)}
 .acts{display:flex;flex-wrap:wrap;gap:6px}
 .empty{margin:0;font-size:13px;color:var(--muted)}
@@ -475,7 +476,15 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     b2:{bg:'hsl(46 92% 52%)', fg:'hsl(40 80% 12%)'}
   };
   var EXTRA = [{bg:'hsl(185 60% 33%)', fg:'#FFFFFF'}, {bg:'hsl(15 75% 46%)', fg:'#FFFFFF'}, {bg:'hsl(215 60% 42%)', fg:'#FFFFFF'}];
-  var bcol = function(b){ return BCOL[b.id] || EXTRA[Math.max(0, BUILDINGS.indexOf(b) - 2) % EXTRA.length]; };
+  /* Choosable building colors (admin picks one per building; the key is saved in the building's config). */
+  var PAL = {
+    purple:{n:'ม่วง', bg:'hsl(280 45% 40%)', fg:'#FFFFFF'}, yellow:{n:'เหลือง', bg:'hsl(46 92% 52%)', fg:'hsl(40 80% 12%)'},
+    teal:{n:'เขียวอมฟ้า', bg:'hsl(185 60% 33%)', fg:'#FFFFFF'}, orange:{n:'ส้ม', bg:'hsl(15 75% 46%)', fg:'#FFFFFF'},
+    blue:{n:'น้ำเงิน', bg:'hsl(215 60% 42%)', fg:'#FFFFFF'}, green:{n:'เขียว', bg:'hsl(140 48% 32%)', fg:'#FFFFFF'},
+    red:{n:'แดง', bg:'hsl(2 62% 44%)', fg:'#FFFFFF'}, pink:{n:'ชมพู', bg:'hsl(330 58% 46%)', fg:'#FFFFFF'},
+    brown:{n:'น้ำตาล', bg:'hsl(25 42% 32%)', fg:'#FFFFFF'}, gray:{n:'เทาเข้ม', bg:'hsl(215 14% 38%)', fg:'#FFFFFF'}
+  };
+  var bcol = function(b){ if(b.color && PAL[b.color]) return PAL[b.color]; return BCOL[b.id] || EXTRA[Math.max(0, BUILDINGS.indexOf(b) - 2) % EXTRA.length]; };
   var findB = function(id){ return BUILDINGS.filter(function(b){ return b.id === id; })[0]; };
   /* a room is closed for maintenance on a date when closed is set and the date is within [closedFrom, closedTo] (blank = open-ended) */
   function isClosed(r, d){ return !!(r && r.closed && (!r.closedFrom || d >= r.closedFrom) && (!r.closedTo || d <= r.closedTo)); }
@@ -1020,6 +1029,15 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       head.appendChild(inp('ชื่อย่อ (ใช้ในรายการ)', b.short, 'rw', function(v){ b.short = v; }));
       if(draft.length > 1) head.appendChild(armBtn('ลบอาคาร', 'b:'+b.id, function(){ draft.splice(bi,1); markDirty(); renderCfg(); }));
       card.appendChild(head);
+      var cr = el('div','colrow'); cr.appendChild(el('span','cl','สีอาคาร'));
+      var curK = b.color && PAL[b.color] ? b.color : (Object.keys(PAL).filter(function(k){ return PAL[k].bg === bcol(b).bg; })[0] || '');
+      Object.keys(PAL).forEach(function(k){
+        var sw = el('button','swatch' + (k === curK ? ' on' : '')); sw.type = 'button'; sw.title = PAL[k].n; sw.setAttribute('aria-label','สี' + PAL[k].n); sw.setAttribute('aria-pressed', k === curK ? 'true' : 'false');
+        sw.style.background = PAL[k].bg;
+        sw.addEventListener('click', function(){ b.color = k; markDirty(); renderCfg(); });
+        cr.appendChild(sw);
+      });
+      card.appendChild(cr);
       var rooms = el('div','rooms');
       b.rooms.forEach(function(r,ri){
         var row = el('div','rrow rrow-room');
@@ -1054,7 +1072,9 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   }
   $('#addB').addEventListener('click', function(){
     if(!draft) resetDraft();
-    draft.push({id:'b'+uid(), name:'อาคารใหม่', short:'อาคารใหม่', rooms:[{id:'r'+uid(), name:'ห้องใหม่', seats:null}]});
+    var usedC = draft.map(function(x){ return x.color || Object.keys(PAL).filter(function(k){ return PAL[k].bg === bcol(x).bg; })[0]; });
+    var freeC = Object.keys(PAL).filter(function(k){ return usedC.indexOf(k) < 0; })[0] || 'blue';
+    draft.push({id:'b'+uid(), name:'อาคารใหม่', short:'อาคารใหม่', color:freeC, rooms:[{id:'r'+uid(), name:'ห้องใหม่', seats:null}]});
     markDirty(); renderCfg();
   });
   $('#cfgReset').addEventListener('click', function(){ resetDraft(); renderCfg(); $('#cfgMsg').textContent = ''; });
@@ -1072,7 +1092,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         var s = parseInt(r.seats,10);
         rooms.push({id:r.id, name:rn, seats: s > 0 ? s : null, closed: !!r.closed, closedFrom: r.closed ? (r.closedFrom || '') : '', closedTo: r.closed ? (r.closedTo || '') : ''});
       }
-      out.push({id:b.id, name:name, short:(b.short||'').trim() || name, rooms:rooms});
+      var ob = {id:b.id, name:name, short:(b.short||'').trim() || name, rooms:rooms}; if(b.color && PAL[b.color]) ob.color = b.color; out.push(ob);
     }
     $('#cfgSave').disabled = true;
     try{
