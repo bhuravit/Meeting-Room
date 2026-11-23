@@ -135,6 +135,14 @@ body.gated .sidenav{position:static;height:auto;background:transparent;border:0}
 body.gated .sidenav .snav,body.gated .sidenav .suser{display:none}
 body.gated .sidenav .brand{align-items:center;border:0;padding:20px 16px 0}
 body.gated .sidenav .logo{height:auto;width:230px;background:transparent;padding:0;border-radius:0}
+/* login: one white card around logo, institute name and the form */
+body.gated .app{max-width:540px;margin:clamp(12px,5vh,48px) auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 12px rgba(20,30,50,.06);overflow:hidden}
+body.gated .sidenav .brand h1{display:none}
+body.gated .sidenav .brand{padding:28px 20px 0;gap:12px}
+body.gated .sidenav .brand small{margin:0;font-size:14px}
+body.gated .wrap{padding:8px 24px 28px;max-width:none}
+body.gated #viewLogin.card{border:0;box-shadow:none;background:transparent;padding:8px 0 0}
+@media (max-width:640px){body.gated .app{margin:0;border-radius:0;border-left:0;border-right:0;min-height:100vh}body.gated .wrap{padding:8px 16px 24px}}
 @media (max-width:900px){.app{display:block}
 .mbar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:30;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--line)}
 body.gated .mbar{display:none}
