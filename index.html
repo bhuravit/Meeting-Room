@@ -168,20 +168,24 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .admin>section{grid-column:2;grid-row:1}
 @media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.admin{grid-template-columns:minmax(0,1fr)}.admin>#adminTabs,.admin>section{grid-column:1;grid-row:auto}}
 .board,.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
-.board{display:flex;flex-direction:column;gap:12px}
+.board{display:flex;flex-direction:column;gap:14px;background:none;border:0;padding:0}
+.bsel{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:14px 18px;border-radius:14px}
+label.bs{flex-direction:row;align-items:center;gap:12px;white-space:nowrap;font-size:14px;font-weight:600;color:var(--muted);min-width:0}
+label.bs select,label.bs input{height:44px;font-size:15px;font-weight:500;color:var(--ink);border-radius:10px}
+#bldSel{min-width:min(100%,380px)}
+label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
+.bdot{width:12px;height:12px;border-radius:50%;background:var(--tb,var(--accent));flex:none}
+.trow{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px}
+.trow h2#dayTitle{font-size:26px;font-weight:600;line-height:1.25;text-align:left;margin:0;flex:1 1 auto}
+.trow .nav{gap:10px}
+.trow .nav .btn{min-height:44px;padding:0 18px;border-radius:12px;font-size:14px;font-weight:600;background:var(--surface)}
+.trow .nav #today{background:color-mix(in srgb,var(--accent) 10%,var(--surface));color:var(--accent);border-color:color-mix(in srgb,var(--accent) 28%,var(--line))}
+.tcard{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.tcard .tt,.tcard .wk,.tcard .cal{border:0;border-top:4px solid var(--tb,var(--line));border-radius:0}
+@media (max-width:640px){label.bs{width:100%}label.bs select,#bldSel{flex:1;min-width:0}label.bs.vd{margin-left:0}label.bs input{flex:1}.trow h2#dayTitle{font-size:21px}.trow .nav{width:100%}.trow .nav .btn{flex:1;padding:0 8px;font-size:13px}}
 .card.stack{display:flex;flex-direction:column;gap:12px}
-.board-head h2#dayTitle{flex:1 1 100%;text-align:center}
-.board-head h2#dayTitle{display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.15;font-weight:500}
-.dt-k{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-body);font-size:14px;font-weight:600;letter-spacing:.04em;color:var(--muted)}
-.dt-tag{font-size:11.5px;letter-spacing:0;padding:0 8px}
-.dt-main{display:inline-flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:0 10px}
-.dt-n{font-size:40px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
-.dt-m{font-size:24px}.dt-m.big{font-size:34px}
-.dt-s{font-size:24px;color:var(--muted)}
-.dt-y{font-size:18px;color:var(--muted);font-family:var(--f-body);font-weight:500}
-@media (max-width:640px){.dt-n{font-size:32px}.dt-m{font-size:20px}.dt-m.big{font-size:28px}.dt-s{font-size:20px}.dt-y{font-size:15px}}
 
-.board-head,.card-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline}
+.card-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
 .sw{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:5px;border:1px solid var(--line)}
 .sw.ok{background:var(--off-bg);border:1px solid var(--muted)}
@@ -358,24 +362,22 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   <!-- ===== booking page ===== -->
   <div class="layout" id="viewMain">
     <section class="board" aria-labelledby="dayTitle">
-      <div class="board-head">
+      <div class="bsel card">
+        <label class="bs"><span class="bdot" id="bdot" aria-hidden="true"></span>อาคาร/สำนัก<select id="bldSel" aria-label="เลือกอาคาร"></select></label>
+        <label class="bs rf" id="rfWrap" hidden>ห้องประชุม<select id="roomFilter" aria-label="เลือกห้องประชุม"></select></label>
+        <label class="bs vd">ไปยังวันที่<input id="vdate" type="date" aria-label="ไปยังวันที่"></label>
+      </div>
+      <div class="trow">
         <h2 id="dayTitle"></h2>
-        <div class="legend">
-          <span id="hintClick" hidden>คลิกช่องว่างเพื่อเลือกเวลา · คลิกการจองเพื่อดูรายละเอียด</span>
-        </div>
+        <span class="nav" id="dateNav">
+          <button class="btn" id="prev" type="button">&laquo; ไปยังวันก่อนหน้า</button>
+          <button class="btn" id="today" type="button">ไปยังวันที่ปัจจุบัน</button>
+          <button class="btn" id="next" type="button">ไปยังวันถัดไป &raquo;</button>
+        </span>
+        <span id="hintClick" hidden></span>
       </div>
-      <div class="vmrow">
-        <label class="rf" id="rfWrap" hidden>ห้องประชุม <select id="roomFilter" aria-label="เลือกห้องประชุม"></select></label>
-      <span class="nav" id="dateNav" style="margin-left:auto">
-        <button class="btn sm" id="prev" type="button">‹ วันก่อนหน้า</button>
-        <button class="btn sm" id="today" type="button">วันนี้</button>
-        <button class="btn sm" id="next" type="button">วันถัดไป ›</button>
-        <input id="vdate" type="date" aria-label="ไปยังวันที่" style="width:auto">
-      </span>
-      </div>
-      <div class="tabs" id="tabs" role="tablist" aria-label="เลือกอาคาร"></div>
-      <div class="scroll" id="dayScroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
-      <div class="scroll" id="altScroll" hidden><div id="altView"></div></div>
+      <div class="scroll tcard" id="dayScroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
+      <div class="scroll tcard" id="altScroll" hidden><div id="altView"></div></div>
       <div class="legend units" id="unitLegend" aria-label="สีของหน่วยงาน" hidden></div>
       <p class="empty" id="dayEmpty" hidden>ยังไม่มีการจองในวันนี้ คลิกช่องว่างในตารางเพื่อจองห้อง</p>
     </section>
@@ -813,19 +815,17 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 
   /* ---------- booking page rendering ---------- */
   function renderTabs(){
-    var t = $('#tabs'); t.innerHTML = '';
-    BUILDINGS.forEach(function(b){
-      var rg = rangeOf(), n = all.filter(function(x){ return x.building === b.id && x.date >= rg[0] && x.date <= rg[1] && blocking(x); }).length;
-      var btn = el('button','tab'); btn.type = 'button'; btn.setAttribute('role','tab');
-      btn.style.setProperty('--tb', bcol(b).bg); btn.style.setProperty('--tf', bcol(b).fg);
-      btn.setAttribute('aria-selected', b.id === curB ? 'true' : 'false');
-      btn.appendChild(document.createTextNode(b.name));
-      btn.appendChild(el('small',null, b.rooms.length+' ห้อง · '+(vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้')+'มีจอง '+n+' รายการ'));
-      btn.addEventListener('click', function(){ if(roomFilter && roomFilter.split('|')[0] !== b.id) roomFilter = ''; if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); } /* switching building clears the time picked on the other one */
-        curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
-      t.appendChild(btn);
-    });
+    var sel = $('#bldSel'); sel.innerHTML = '';
+    BUILDINGS.forEach(function(b){ var o = el('option', null, b.name); o.value = b.id; sel.appendChild(o); });
+    sel.value = curB;
+    $('#viewMain').style.setProperty('--tb', bcol(bOf(curB)).bg);
   }
+  $('#bldSel').addEventListener('change', function(){
+    var id = this.value;
+    if(roomFilter && roomFilter.split('|')[0] !== id) roomFilter = '';
+    if(curB !== id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); } /* switching building clears the time picked on the other one */
+    curB = id; $('#f-bld').value = id; syncRooms(); render();
+  });
 
   var pickEnd = false; /* after the first click on the timetable the next click in the same room sets the end time */
   var draftOn = false; /* the preview shows once the user starts choosing a time, not for the form's default values */
@@ -837,8 +837,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var h0 = el('div','hd t','เวลา'); h0.style.gridRow = '1'; g.appendChild(h0);
     rooms.forEach(function(r,i){
       var h = el('div','hd'); h.style.gridColumn = String(i+2);
-      h.appendChild(el('span',null,r.name));
-      if(r.seats) h.appendChild(el('small',null,r.seats+' ที่นั่ง'));
+      h.appendChild(el('span',null,r.name + (r.seats ? ' (' + r.seats + ' ที่นั่ง)' : '')));
       if(isClosed(r, date)){ h.appendChild(el('em','closedtag','ปิดปรับปรุง')); if(r.closedTo) h.appendChild(el('small',null,'พร้อมใช้ ' + parse(shift(r.closedTo,1)).getDate() + ' ' + THM[parse(shift(r.closedTo,1)).getMonth()])); h.classList.add('isclosed'); }
       g.appendChild(h);
     });
@@ -936,30 +935,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     if(vmode === 'month'){ var d = parse(date); return 'เดือน' + THM[d.getMonth()] + ' พ.ศ. ' + (d.getFullYear() + 543); }
     return thDate(date);
   }
-  /* heading above the timetable: small label, big day number, month, year */
-  function renderTitle(){
-    var h = $('#dayTitle'); h.innerHTML = '';
-    function seg(cls, t){ var e = el('span', cls, t); return e; }
-    var main = el('span','dt-main'), eyebrow, tag = '';
-    if(vmode === 'week'){
-      var r = rangeOf(), a = parse(r[0]), b = parse(r[1]);
-      eyebrow = 'รายสัปดาห์';
-      main.appendChild(seg('dt-n', String(a.getDate()))); if(a.getMonth() !== b.getMonth()) main.appendChild(seg('dt-m', THM[a.getMonth()]));
-      main.appendChild(seg('dt-s', '–')); main.appendChild(seg('dt-n', String(b.getDate()))); main.appendChild(seg('dt-m', THM[b.getMonth()]));
-      main.appendChild(seg('dt-y', 'พ.ศ. ' + (b.getFullYear() + 543)));
-      if(r[0] <= todayStr() && todayStr() <= r[1]) tag = 'สัปดาห์นี้';
-    } else if(vmode === 'month'){
-      var d = parse(date); eyebrow = 'รายเดือน';
-      main.appendChild(seg('dt-m big', THM[d.getMonth()])); main.appendChild(seg('dt-y', 'พ.ศ. ' + (d.getFullYear() + 543)));
-      if(date.slice(0,7) === todayStr().slice(0,7)) tag = 'เดือนนี้';
-    } else {
-      var x = parse(date); eyebrow = 'วัน' + DAYF[x.getDay()];
-      main.appendChild(seg('dt-n', String(x.getDate()))); main.appendChild(seg('dt-m', THM[x.getMonth()])); main.appendChild(seg('dt-y', 'พ.ศ. ' + (x.getFullYear() + 543)));
-      if(date === todayStr()) tag = 'วันนี้';
-    }
-    var top = el('span','dt-k'); top.appendChild(document.createTextNode(eyebrow)); if(tag) top.appendChild(el('span','chip approved dt-tag', tag));
-    h.appendChild(top); h.appendChild(main);
-  }
+  function renderTitle(){ $('#dayTitle').textContent = viewTitle(); }
   function roomShort(b){
     var r = bOf(b.building).rooms.filter(function(x){ return x.id === b.room; })[0], nm = (r && r.name) || b.roomName || b.room;
     var m = /\(([^)]+)\)\s*$/.exec(nm); return m ? 'ห้อง ' + m[1] : nm;
@@ -1728,9 +1704,10 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#dayScroll').hidden = !dm; $('#altScroll').hidden = dm;
     $('#hintClick').hidden = true; /* hint text removed */
     [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).setAttribute('aria-pressed', vmode === m[1] ? 'true' : 'false'); });
-    $('#prev').textContent = '‹ ' + (vmode === 'week' ? 'สัปดาห์ก่อนหน้า' : vmode === 'month' ? 'เดือนก่อนหน้า' : 'วันก่อนหน้า');
-    $('#next').textContent = (vmode === 'week' ? 'สัปดาห์ถัดไป' : vmode === 'month' ? 'เดือนถัดไป' : 'วันถัดไป') + ' ›';
-    $('#today').textContent = vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้';
+    var unitW = vmode === 'week' ? 'สัปดาห์' : vmode === 'month' ? 'เดือน' : 'วัน';
+    $('#prev').textContent = '\u00AB ไปยัง' + unitW + 'ก่อนหน้า';
+    $('#next').textContent = 'ไปยัง' + unitW + 'ถัดไป \u00BB';
+    $('#today').textContent = vmode === 'day' ? 'ไปยังวันที่ปัจจุบัน' : 'ไปยัง' + unitW + 'ปัจจุบัน';
     renderTabs();
     $('#rfWrap').hidden = dm;
     if(!dm) renderRoomFilter();
