@@ -178,6 +178,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
 .trow{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px}
 .trow h2#dayTitle{font-size:26px;font-weight:600;line-height:1.25;text-align:left;margin:0;flex:1 1 auto}
 .trow .nav{gap:10px}
+.trow .nav input{height:44px;width:auto;border-radius:12px;font-size:14px;padding:0 12px}
 .trow .nav .btn{min-height:44px;padding:0 18px;border-radius:12px;font-size:14px;font-weight:600;background:var(--surface)}
 .trow .nav #today{background:color-mix(in srgb,var(--accent) 10%,var(--surface));color:var(--accent);border-color:color-mix(in srgb,var(--accent) 28%,var(--line))}
 .tcard{background:var(--surface);border:1px solid var(--line);border-radius:14px}
@@ -362,20 +363,18 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
   <!-- ===== booking page ===== -->
   <div class="layout" id="viewMain">
     <section class="board" aria-labelledby="dayTitle">
-      <div class="bsel card">
-        <label class="bs"><span class="bdot" id="bdot" aria-hidden="true"></span>อาคาร/สำนัก<select id="bldSel" aria-label="เลือกอาคาร"></select></label>
-        <label class="bs rf" id="rfWrap" hidden>ห้องประชุม<select id="roomFilter" aria-label="เลือกห้องประชุม"></select></label>
-        <label class="bs vd">ไปยังวันที่<input id="vdate" type="date" aria-label="ไปยังวันที่"></label>
-      </div>
+      <div class="tabs" id="tabs" role="tablist" aria-label="เลือกอาคาร"></div>
       <div class="trow">
         <h2 id="dayTitle"></h2>
         <span class="nav" id="dateNav">
           <button class="btn" id="prev" type="button">&laquo; ไปยังวันก่อนหน้า</button>
           <button class="btn" id="today" type="button">ไปยังวันที่ปัจจุบัน</button>
           <button class="btn" id="next" type="button">ไปยังวันถัดไป &raquo;</button>
+          <input id="vdate" type="date" aria-label="ไปยังวันที่">
         </span>
         <span id="hintClick" hidden></span>
       </div>
+      <label class="rf" id="rfWrap" hidden>ห้องประชุม <select id="roomFilter" aria-label="เลือกห้องประชุม"></select></label>
       <div class="scroll tcard" id="dayScroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
       <div class="scroll tcard" id="altScroll" hidden><div id="altView"></div></div>
       <div class="legend units" id="unitLegend" aria-label="สีของหน่วยงาน" hidden></div>
@@ -815,17 +814,19 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
 
   /* ---------- booking page rendering ---------- */
   function renderTabs(){
-    var sel = $('#bldSel'); sel.innerHTML = '';
-    BUILDINGS.forEach(function(b){ var o = el('option', null, b.name); o.value = b.id; sel.appendChild(o); });
-    sel.value = curB;
-    $('#viewMain').style.setProperty('--tb', bcol(bOf(curB)).bg);
+    var t = $('#tabs'); t.innerHTML = '';
+    BUILDINGS.forEach(function(b){
+      var rg = rangeOf(), n = all.filter(function(x){ return x.building === b.id && x.date >= rg[0] && x.date <= rg[1] && blocking(x); }).length;
+      var btn = el('button','tab'); btn.type = 'button'; btn.setAttribute('role','tab');
+      btn.style.setProperty('--tb', bcol(b).bg); btn.style.setProperty('--tf', bcol(b).fg);
+      btn.setAttribute('aria-selected', b.id === curB ? 'true' : 'false');
+      btn.appendChild(document.createTextNode(b.name));
+      btn.appendChild(el('small',null, b.rooms.length+' ห้อง · '+(vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้')+'มีจอง '+n+' รายการ'));
+      btn.addEventListener('click', function(){ if(roomFilter && roomFilter.split('|')[0] !== b.id) roomFilter = ''; if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); } /* switching building clears the time picked on the other one */
+        curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
+      t.appendChild(btn);
+    });
   }
-  $('#bldSel').addEventListener('change', function(){
-    var id = this.value;
-    if(roomFilter && roomFilter.split('|')[0] !== id) roomFilter = '';
-    if(curB !== id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); } /* switching building clears the time picked on the other one */
-    curB = id; $('#f-bld').value = id; syncRooms(); render();
-  });
 
   var pickEnd = false; /* after the first click on the timetable the next click in the same room sets the end time */
   var draftOn = false; /* the preview shows once the user starts choosing a time, not for the form's default values */
