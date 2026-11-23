@@ -156,6 +156,9 @@ h3{font-size:15px}
 .vm{margin:0}
 #dateNav{gap:6px}#dateNav input{padding:5px 8px;font-size:13px;min-height:0;height:auto}.vmrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 4px}
 #roomFilter{max-width:100%;min-width:0}
+.tcol{display:flex;flex-direction:column;gap:6px;min-width:0}
+label.rsel{display:flex;flex-direction:row;align-items:center;gap:10px;min-width:0;padding:6px 10px 6px 14px;border:1px solid var(--line);border-left:5px solid var(--tb,var(--accent));border-radius:6px;background:var(--surface);font-size:13px;color:var(--muted);white-space:nowrap}
+label.rsel select{flex:1;min-width:0;height:36px;font-size:14px;color:var(--ink)}
 label.rf{max-width:100%;display:flex;flex-direction:row;align-items:center;gap:8px;font-size:13px;min-width:0}
 .rf select{width:auto;max-width:min(100%,420px)}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:100%}@media (max-width:760px){.cal .cc{padding:2px;overflow:hidden}.cal .bk{overflow:hidden}.cal .bk{margin:0;padding:2px 3px;font-size:10px;line-height:1.25}.cal .bk span:not(:first-of-type){display:none}.cal .ch{padding:4px 2px;font-size:11px}}
@@ -425,7 +428,6 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
         </span>
         <span id="hintClick" hidden></span>
       </div>
-      <label class="rf" id="rfWrap" hidden>ห้องประชุม <select id="roomFilter" aria-label="เลือกห้องประชุม"></select></label>
       <div class="tabs" id="tabs" role="tablist" aria-label="เลือกอาคาร"></div>
       <div class="scroll tcard" id="dayScroll"><div class="tt" id="grid" role="group" aria-label="ตารางการใช้ห้อง"></div></div>
       <div class="scroll tcard" id="altScroll" hidden><div id="altView"></div></div>
@@ -866,6 +868,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
 
   /* ---------- booking page rendering ---------- */
   function renderTabs(){
+    roomFilterOk();
     var t = $('#tabs'); t.innerHTML = '';
     BUILDINGS.forEach(function(b){
       var rg = rangeOf(), n = all.filter(function(x){ return x.building === b.id && x.date >= rg[0] && x.date <= rg[1] && blocking(x); }).length;
@@ -876,7 +879,21 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
       btn.appendChild(el('small',null, b.rooms.length+' ห้อง · '+(vmode === 'week' ? 'สัปดาห์นี้' : vmode === 'month' ? 'เดือนนี้' : 'วันนี้')+'มีจอง '+n+' รายการ'));
       btn.addEventListener('click', function(){ if(roomFilter && roomFilter.split('|')[0] !== b.id) roomFilter = ''; if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); } /* switching building clears the time picked on the other one */
         curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
-      t.appendChild(btn);
+      var col = el('div','tcol'); col.appendChild(btn);
+      if(vmode !== 'day'){
+        var lb = el('label','rsel'); lb.style.setProperty('--tb', bcol(b).bg);
+        lb.appendChild(el('span', null, 'ห้องประชุม'));
+        var sel = el('select'); sel.setAttribute('aria-label', 'เลือกห้องประชุมใน' + b.name);
+        var a0 = el('option', null, 'ทุกห้อง'); a0.value = ''; sel.appendChild(a0);
+        b.rooms.forEach(function(r){ var o = el('option', null, r.name); o.value = b.id + '|' + r.id; sel.appendChild(o); });
+        sel.value = roomFilter && roomFilter.split('|')[0] === b.id ? roomFilter : '';
+        sel.addEventListener('change', function(){
+          if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); }
+          roomFilter = sel.value; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render();
+        });
+        lb.appendChild(sel); col.appendChild(lb);
+      }
+      t.appendChild(col);
     });
   }
 
@@ -1003,23 +1020,11 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     return k;
   }
   function goDay(d){ date = d; vmode = 'day'; $('#f-date').value = date; render(); }
-  function renderRoomFilter(){
-    var sel = $('#roomFilter'); sel.innerHTML = '';
-    var all0 = el('option', null, 'ทุกห้อง (อาคารที่เลือก)'); all0.value = ''; sel.appendChild(all0);
-    var ok = false;
-    BUILDINGS.forEach(function(b){
-      var g = el('optgroup'); g.label = b.name;
-      b.rooms.forEach(function(r){ var o = el('option', null, r.name); o.value = b.id + '|' + r.id; if(o.value === roomFilter) ok = true; g.appendChild(o); });
-      sel.appendChild(g);
-    });
-    if(!ok) roomFilter = '';
-    sel.value = roomFilter;
+  function roomFilterOk(){
+    if(!roomFilter) return;
+    var p = roomFilter.split('|'), bl = findB(p[0]);
+    if(!bl || !bl.rooms.some(function(r){ return r.id === p[1]; })) roomFilter = '';
   }
-  $('#roomFilter').addEventListener('change', function(){
-    roomFilter = this.value;
-    if(roomFilter){ var bid = roomFilter.split('|')[0]; if(bid !== curB && findB(bid)){ curB = bid; $('#f-bld').value = bid; syncRooms(); } }
-    render();
-  });
   /* weekly time grid: one column per day, bookings drawn as blocks spanning their time, tinted by the booker's unit */
   var WROW = 28;
   var DAYF = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
@@ -1831,8 +1836,6 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     $('#next').textContent = 'ไปยัง' + unitW + 'ถัดไป \u00BB';
     $('#today').textContent = vmode === 'day' ? 'ไปยังวันที่ปัจจุบัน' : 'ไปยัง' + unitW + 'ปัจจุบัน';
     renderTabs();
-    $('#rfWrap').hidden = dm;
-    if(!dm) renderRoomFilter();
     if(dm) renderGrid(); else renderAlt();
     renderDetail();
     $('#submit').disabled = !canWrite && !local;
