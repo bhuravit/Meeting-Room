@@ -157,8 +157,11 @@ h3{font-size:15px}
 #dateNav{gap:6px}#dateNav input{padding:5px 8px;font-size:13px;min-height:0;height:auto}.vmrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 4px}
 #roomFilter{max-width:100%;min-width:0}
 .tcol{display:flex;flex-direction:column;gap:6px;min-width:0}
-label.rsel{display:flex;flex-direction:row;align-items:center;gap:10px;min-width:0;padding:6px 10px 6px 14px;border:1px solid var(--line);border-left:5px solid var(--tb,var(--accent));border-radius:6px;background:var(--surface);font-size:13px;color:var(--muted);white-space:nowrap}
-label.rsel select{flex:1;min-width:0;height:36px;font-size:14px;color:var(--ink)}
+.rsel{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 8px 12px;border:1px solid var(--line);border-left:5px solid var(--tb,var(--accent));border-radius:6px;background:var(--surface)}
+.rbtn{min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;cursor:pointer;max-width:100%;overflow-wrap:anywhere;text-align:left}
+.rbtn:hover{background:var(--hover)}
+.rbtn[aria-pressed="true"]{background:var(--tb,var(--accent));border-color:var(--tb,var(--accent));color:var(--tf,#fff);font-weight:600}
+.rbtn:focus-visible{outline:3px solid var(--focus,#2F6FDE);outline-offset:1px}
 label.rf{max-width:100%;display:flex;flex-direction:row;align-items:center;gap:8px;font-size:13px;min-width:0}
 .rf select{width:auto;max-width:min(100%,420px)}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:100%}@media (max-width:760px){.cal .cc{padding:2px;overflow:hidden}.cal .bk{overflow:hidden}.cal .bk{margin:0;padding:2px 3px;font-size:10px;line-height:1.25}.cal .bk span:not(:first-of-type){display:none}.cal .ch{padding:4px 2px;font-size:11px}}
@@ -881,17 +884,19 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
         curB = b.id; $('#f-bld').value = b.id; syncRooms(); render(); });
       var col = el('div','tcol'); col.appendChild(btn);
       if(vmode !== 'day'){
-        var lb = el('label','rsel'); lb.style.setProperty('--tb', bcol(b).bg);
-        lb.appendChild(el('span', null, 'ห้องประชุม'));
-        var sel = el('select'); sel.setAttribute('aria-label', 'เลือกห้องประชุมใน' + b.name);
-        var a0 = el('option', null, 'ทุกห้อง'); a0.value = ''; sel.appendChild(a0);
-        b.rooms.forEach(function(r){ var o = el('option', null, r.name); o.value = b.id + '|' + r.id; sel.appendChild(o); });
-        sel.value = roomFilter && roomFilter.split('|')[0] === b.id ? roomFilter : '';
-        sel.addEventListener('change', function(){
-          if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); }
-          roomFilter = sel.value; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render();
-        });
-        lb.appendChild(sel); col.appendChild(lb);
+        var lb = el('div','rsel'); lb.setAttribute('role','group'); lb.setAttribute('aria-label','ห้องประชุมใน' + b.name); lb.style.setProperty('--tb', bcol(b).bg); lb.style.setProperty('--tf', bcol(b).fg);
+        var cur = roomFilter && roomFilter.split('|')[0] === b.id ? roomFilter : '';
+        function chipBtn(label, val){
+          var c = el('button','rbtn', label); c.type = 'button'; c.setAttribute('aria-pressed', val === cur ? 'true' : 'false');
+          c.addEventListener('click', function(){
+            if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); }
+            roomFilter = val; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render();
+          });
+          lb.appendChild(c);
+        }
+        chipBtn('ทุกห้อง', '');
+        b.rooms.forEach(function(r){ chipBtn(r.name, b.id + '|' + r.id); });
+        col.appendChild(lb);
       }
       t.appendChild(col);
     });
