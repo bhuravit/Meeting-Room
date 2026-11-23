@@ -101,6 +101,14 @@
 .sform .sf{flex:1 1 100%;flex-wrap:wrap}.sform #sr-q{flex:1}}
 @media print{.sidenav,.mbar,.nvbd,.notice,.sform,#toast,.stbl .act{display:none!important}.app{display:block}.wrap{padding:0;max-width:none}.sres{border:0;padding:0}body{background:#fff}}
 /* ---- side navigation ---- */
+.ic-users{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%229%22 cy=%228%22 r=%224%22/%3E%3Cpath d=%22M1 21c0-4 3.5-6 8-6s8 2 8 6M17 4a4 4 0 010 8M23 21c0-3-2-5-5-5.7%22/%3E%3C/svg%3E")}
+.ic-bld{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%224%22 y=%222%22 width=%2216%22 height=%2220%22 rx=%222%22/%3E%3Cpath d=%22M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01%22/%3E%3C/svg%3E")}
+.ic-av{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%222%22 y=%223%22 width=%2220%22 height=%2214%22 rx=%222%22/%3E%3Cpath d=%22M8 21h8M12 17v4%22/%3E%3C/svg%3E")}
+.ic-chart{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M3 3v18h18M7 16v-5M12 16V7M17 16v-9%22/%3E%3C/svg%3E")}
+#adminNav .ssec{padding-top:14px}
+body:not(.onadmin) #adminNav .sitem[aria-current="page"]{background:transparent;color:var(--ink);font-weight:500}
+body.onadmin #adminNav .sitem[aria-current="page"]{background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent);font-weight:600}
+
 .app{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh;align-items:start}
 .sidenav{position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--line);padding:0}
 .sidenav .brand{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;gap:8px;padding:18px 18px 16px;border-bottom:1px solid var(--line);background:transparent!important;border-radius:0!important;box-shadow:none!important}
@@ -215,10 +223,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .notice{margin:0;padding:9px 12px;border:1px dashed var(--line);border-radius:6px;background:var(--surface);font-size:13px;color:var(--muted)}
 .layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:20px;align-items:start}
 .layout.wide{grid-template-columns:minmax(0,1fr)}
-.admin{display:grid;grid-template-columns:280px minmax(0,1fr);gap:20px;align-items:start}
-.admin>#adminTabs{grid-column:1;grid-row:1}
-.admin>section{grid-column:2;grid-row:1}
-@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.admin{grid-template-columns:minmax(0,1fr)}.admin>#adminTabs,.admin>section{grid-column:1;grid-row:auto}}
+.admin{display:block}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}
 .board,.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
 .board{display:flex;flex-direction:column;gap:14px;background:none;border:0;padding:0}
 .bsel{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:14px 18px;border-radius:14px}
@@ -246,7 +252,6 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
 .units{margin-top:2px}
 .scroll{overflow-x:auto}
 .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px}
-#adminTabs{grid-template-columns:minmax(0,1fr)}
 .rpt-ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
 .rpt-ctl label{display:flex;flex-direction:column;gap:4px;font-size:13px}
 .seg{display:flex;gap:0}.seg .btn{border-radius:0}.seg .btn:first-child{border-radius:6px 0 0 6px}.seg .btn:last-child{border-radius:0 6px 6px 0;margin-left:-1px}
@@ -384,7 +389,13 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
       <button type="button" class="sitem ic-month" id="vmMonth" aria-pressed="false">รายเดือน</button>
       <div class="ssec">เมนู</div>
       <a class="sitem ic-search" id="goSearch" href="#search">ค้นหา</a>
-      <a class="sitem ic-admin" id="goAdmin" href="#admin" hidden>หน้าผู้ดูแล</a>
+      <div id="adminNav" hidden>
+        <div class="ssec">ผู้ดูแลระบบ</div>
+        <button type="button" class="sitem ic-users" id="atUsers" aria-current="page" aria-controls="secUsers">เพิ่มผู้ใช้งาน</button>
+        <button type="button" class="sitem ic-bld" id="atVenues" aria-current="false" aria-controls="secVenues">เพิ่มอาคารห้องประชุม</button>
+        <button type="button" class="sitem ic-av" id="atEquip" aria-current="false" aria-controls="secEquip">เพิ่มอุปกรณ์สื่อโสต</button>
+        <button type="button" class="sitem ic-chart" id="atReport" aria-current="false" aria-controls="secReport">รายงานสรุปการใช้งาน</button>
+      </div>
       <a class="sitem ic-back" id="goMain" href="#main" hidden>กลับหน้าจอง</a>
       <button class="sitem ic-in" id="goLogin" type="button" hidden>เข้าสู่ระบบ</button>
     </nav>
@@ -481,12 +492,6 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
 
   <!-- ===== admin page ===== -->
   <div class="admin" id="viewAdmin" hidden>
-    <div class="tabs" id="adminTabs" role="tablist" aria-label="เมนูผู้ดูแล">
-      <button class="tab" type="button" role="tab" id="atUsers" aria-selected="true" aria-controls="secUsers">เพิ่มผู้ใช้งาน<small>เพิ่ม ลบ ตั้งสิทธิ์ผู้ดูแล</small></button>
-      <button class="tab" type="button" role="tab" id="atVenues" aria-selected="false" aria-controls="secVenues">เพิ่มอาคารห้องประชุม<small>เพิ่ม แก้ไข ลบ อาคารและห้อง</small></button>
-      <button class="tab" type="button" role="tab" id="atEquip" aria-selected="false" aria-controls="secEquip">เพิ่มอุปกรณ์สื่อโสต<small>เพิ่ม แก้ไข ลบ อุปกรณ์ที่ให้เลือกจอง</small></button>
-      <button class="tab" type="button" role="tab" id="atReport" aria-selected="false" aria-controls="secReport">รายงานสรุปการใช้งาน<small>รายเดือน รายปี</small></button>
-    </div>
     <section class="card stack" id="secUsers" role="tabpanel" aria-labelledby="atUsers">
       <div class="card-head"><h2 id="usrTitle">ผู้ใช้งาน <span class="mono" id="uCount"></span></h2></div>
       <form id="uForm" class="stack" style="gap:10px">
@@ -1712,15 +1717,16 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
 
   function setAdminTab(name){
     [['users','Users'],['venues','Venues'],['equip','Equip'],['report','Report']].forEach(function(t){
-      var on = t[0] === name; $('#sec' + t[1]).hidden = !on; $('#at' + t[1]).setAttribute('aria-selected', on ? 'true' : 'false');
+      var on = t[0] === name; $('#sec' + t[1]).hidden = !on; $('#at' + t[1]).setAttribute('aria-current', on ? 'page' : 'false');
     });
     if(name === 'equip') renderEq();
     if(name === 'report') loadReport();
   }
-  $('#atUsers').addEventListener('click', function(){ setAdminTab('users'); });
-  $('#atVenues').addEventListener('click', function(){ setAdminTab('venues'); });
-  $('#atEquip').addEventListener('click', function(){ setAdminTab('equip'); });
-  $('#atReport').addEventListener('click', function(){ setAdminTab('report'); });
+  function openAdmin(n){ setAdminTab(n); if(location.hash !== '#admin') location.hash = '#admin'; }
+  $('#atUsers').addEventListener('click', function(){ openAdmin('users'); });
+  $('#atVenues').addEventListener('click', function(){ openAdmin('venues'); });
+  $('#atEquip').addEventListener('click', function(){ openAdmin('equip'); });
+  $('#atReport').addEventListener('click', function(){ openAdmin('report'); });
 
   /* ---------- page shell ---------- */
   function renderBanner(){
@@ -1823,7 +1829,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin'; $('#viewSearch').hidden = gate || view !== 'search';
     $('#viewMain').classList.toggle('guest', viewOnly); $('.side').hidden = viewOnly;
     $('#dateNav').hidden = gate || view !== 'main';
-    $('#goAdmin').hidden = gate || !canEdit || view === 'admin'; $('#goMain').hidden = gate || view === 'main';
+    $('#adminNav').hidden = gate || !canEdit; document.body.classList.toggle('onadmin', view === 'admin'); $('#goMain').hidden = gate || view === 'main';
     $('#goSearch').hidden = gate; $('#goSearch').setAttribute('aria-current', view === 'search' ? 'page' : 'false');
     document.body.classList.toggle('inadmin', view !== 'main');
     $('#goLogin').hidden = !guest;
@@ -1874,7 +1880,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
   $('#navBtn').addEventListener('click', function(){ var o = document.body.classList.toggle('navopen'); this.setAttribute('aria-expanded', o ? 'true' : 'false'); });
   $('#nvbd').addEventListener('click', closeNav);
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNav(); });
-  $('#sidenav').addEventListener('click', function(e){ if(e.target.closest('a.sitem, #meEdit, #goLogin')) closeNav(); });
+  $('#sidenav').addEventListener('click', function(e){ if(e.target.closest('a.sitem, #meEdit, #goLogin, #adminNav .sitem')) closeNav(); });
   document.querySelector('a.brand').addEventListener('click', function(){ if(!gated()){ roomFilter = ''; goDay(todayStr()); } }); /* logo/title: back to today's booking page */
 
   /* ---------- start ---------- */
