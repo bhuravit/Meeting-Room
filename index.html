@@ -33,9 +33,55 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+/* ---- side navigation ---- */
+.app{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh;align-items:start}
+.sidenav{position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--line);padding:0}
+.sidenav .brand{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;gap:8px;padding:18px 18px 16px;border-bottom:1px solid var(--line);background:transparent!important;border-radius:0!important;box-shadow:none!important}
+.sidenav .logo{height:46px;padding:0;border-radius:0}.sidenav .brand h1{font-size:19px;font-weight:500;line-height:1.25}.sidenav .brand small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+body:not(.gated) .sidenav .brand h1{color:var(--ink)}
+body:not(.gated) .sidenav .brand{padding:18px 18px 16px}
+.snav{display:flex;flex-direction:column;gap:2px;padding:14px 12px;flex:1}
+.ssec{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--muted);padding:14px 12px 6px}.ssec:first-child{padding-top:4px}
+.sitem{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:8px 12px;border:0;border-radius:10px;background:transparent;color:var(--ink);font-size:15px;font-weight:500;text-align:left;text-decoration:none;cursor:pointer}
+.sitem:hover{background:var(--hover)}
+.sitem:focus-visible,.nvbtn:focus-visible{outline:3px solid var(--focus,#2F6FDE);outline-offset:-2px}
+.sitem[aria-pressed="true"],.sitem[aria-current="page"]{background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent);font-weight:600}
+body.inadmin .sitem[aria-pressed="true"]{background:transparent;color:var(--ink);font-weight:500}
+.sitem::before,.nvbtn::before{content:'';flex:none;width:22px;height:22px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+.ic-day{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22/%3E%3Cpath d=%22M16 2v4M8 2v4M3 10h18%22/%3E%3Ccircle cx=%2212%22 cy=%2216%22 r=%221.5%22/%3E%3C/svg%3E")}
+.ic-week{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22/%3E%3Cpath d=%22M16 2v4M8 2v4M3 10h18%22/%3E%3Cpath d=%22M8 14h8M8 18h8%22/%3E%3C/svg%3E")}
+.ic-month{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22/%3E%3Cpath d=%22M16 2v4M8 2v4M3 10h18%22/%3E%3Cpath d=%22M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01%22/%3E%3C/svg%3E")}
+.ic-admin{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z%22/%3E%3C/svg%3E")}
+.ic-back{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M15 18l-6-6 6-6%22/%3E%3C/svg%3E")}
+.ic-user{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%228%22 r=%224%22/%3E%3Cpath d=%22M4 21c0-4 4-6 8-6s8 2 8 6%22/%3E%3C/svg%3E")}
+.ic-out{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9%22/%3E%3C/svg%3E")}
+.ic-in{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3%22/%3E%3C/svg%3E")}
+.ic-menu{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M3 6h18M3 12h18M3 18h18%22/%3E%3C/svg%3E")}
+.suser{border-top:1px solid var(--line);padding:14px 12px 16px;display:flex;flex-direction:column;gap:6px}
+.ucard{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--bg)}
+.uav{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--surface))}
+.ucard>div{min-width:0}.uname{font-weight:600;line-height:1.3;overflow-wrap:anywhere}.uunit{font-size:12.5px;color:var(--muted);line-height:1.3;overflow-wrap:anywhere}
+.sout{border:1px solid var(--line);justify-content:center;margin-top:4px}
+.mbar,.nvbd{display:none}
+body.gated .app{display:block;min-height:0}
+body.gated .sidenav{position:static;height:auto;background:transparent;border:0}
+body.gated .sidenav .snav,body.gated .sidenav .suser{display:none}
+body.gated .sidenav .brand{align-items:center;border:0;padding:20px 16px 0}
+body.gated .sidenav .logo{height:56px}
+@media (max-width:900px){.app{display:block}
+.mbar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:30;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--line)}
+body.gated .mbar{display:none}
+.nvbtn{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;color:var(--ink)}.nvbtn::before{margin:0}
+.mbar b{font-family:var(--f-head);font-weight:500;font-size:17px}
+.sidenav{position:fixed;left:0;top:0;bottom:0;height:auto;width:min(300px,86vw);z-index:50;transform:translateX(-102%);visibility:hidden;transition:transform .2s,visibility 0s .2s}
+body.navopen .sidenav{transform:none;visibility:visible;transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.25)}
+body.gated .sidenav{position:static;transform:none;visibility:visible;width:auto}
+body.navopen .nvbd{display:block;position:fixed;inset:0;z-index:40;background:rgba(10,15,25,.45)}}
+@media (prefers-reduced-motion:reduce){.sidenav{transition:none!important}}
+
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
-  padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+  padding:0}
+.wrap{max-width:1240px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px;padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));min-width:0}
 h1,h2,h3{font-family:var(--f-head);font-weight:500;margin:0;text-wrap:balance}
 h1{font-size:26px;line-height:1.25}
 h2{font-size:18px}
@@ -224,25 +270,32 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 </head>
 <body>
 <div id="toast" class="toast" role="alert" aria-live="assertive" hidden></div>
-<div class="wrap">
-  <header class="top">
+<div class="app">
+  <div class="mbar"><button class="nvbtn ic-menu" id="navBtn" type="button" aria-label="เปิดเมนู" aria-expanded="false" aria-controls="sidenav"></button><b>ระบบจองห้องประชุม</b></div>
+  <aside class="sidenav" id="sidenav" aria-label="เมนูหลัก">
     <a class="brand" href="#main" aria-label="กลับหน้าแรกการจอง" title="กลับหน้าแรกการจอง">
       <img class="logo" src="logo.png" alt="โลโก้สถาบันพระบรมราชชนก สภากาชาดไทย ศรีสวรินทิรา" width="154" height="65">
-      <h1 id="pageTitle">ระบบจองห้องประชุม</h1>
+      <span><h1 id="pageTitle">ระบบจองห้องประชุม</h1><small>สถาบันการพยาบาลศรีสวรินทิรา</small></span>
     </a>
-    <nav class="nav" aria-label="เมนู">
-      <span class="me" id="meChip" hidden>
-        <img id="meImg" alt="" width="28" height="28">
-        <span id="meName"></span>
-        <span class="chip approved" id="meRole"></span>
-        <button class="btn sm" id="meEdit" type="button" hidden>ข้อมูลส่วนตัว</button>
-        <button class="btn sm" id="exitDemo" type="button" hidden>ออกจากโหมดทดลอง</button>
-      </span>
-      <a class="btn" id="goAdmin" href="#admin" hidden>หน้าผู้ดูแล</a>
-      <button class="btn primary" id="goLogin" type="button" hidden>เข้าสู่ระบบ</button>
-      <a class="btn" id="goMain" href="#main" hidden>‹ กลับหน้าจอง</a>
+    <nav class="snav" aria-label="เมนู">
+      <div class="ssec">ปฏิทินการจอง</div>
+      <button type="button" class="sitem ic-day" id="vmDay" aria-pressed="true">รายวัน</button>
+      <button type="button" class="sitem ic-week" id="vmWeek" aria-pressed="false">รายสัปดาห์</button>
+      <button type="button" class="sitem ic-month" id="vmMonth" aria-pressed="false">รายเดือน</button>
+      <div class="ssec">เมนู</div>
+      <a class="sitem ic-admin" id="goAdmin" href="#admin" hidden>หน้าผู้ดูแล</a>
+      <a class="sitem ic-back" id="goMain" href="#main" hidden>กลับหน้าจอง</a>
+      <button class="sitem ic-in" id="goLogin" type="button" hidden>เข้าสู่ระบบ</button>
     </nav>
-  </header>
+    <div class="suser" id="meChip" hidden>
+      <div class="ucard"><span class="uav" id="meAv" aria-hidden="true"></span><div><div class="uname" id="meName"></div><div class="uunit" id="meUnit"></div></div></div>
+      <span class="chip approved" id="meRole" hidden></span>
+      <button class="sitem ic-user" id="meEdit" type="button" hidden>ข้อมูลส่วนตัว / รหัสผ่าน</button>
+      <button class="sitem sout ic-out" id="exitDemo" type="button" hidden>ออกจากระบบ</button>
+    </div>
+  </aside>
+  <div class="nvbd" id="nvbd"></div>
+  <div class="wrap">
 
   <p class="notice" id="banner" hidden></p>
 
@@ -272,11 +325,6 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
         </div>
       </div>
       <div class="vmrow">
-        <div class="seg vm" role="group" aria-label="รูปแบบการแสดงตาราง">
-          <button type="button" class="btn sm" id="vmDay" aria-pressed="true">รายวัน</button>
-          <button type="button" class="btn sm" id="vmWeek" aria-pressed="false">รายสัปดาห์</button>
-          <button type="button" class="btn sm" id="vmMonth" aria-pressed="false">รายเดือน</button>
-        </div>
         <label class="rf" id="rfWrap" hidden>ห้องประชุม <select id="roomFilter" aria-label="เลือกห้องประชุม"></select></label>
       <span class="nav" id="dateNav" style="margin-left:auto">
         <button class="btn sm" id="prev" type="button">‹ วันก่อนหน้า</button>
@@ -403,6 +451,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       <button class="btn" id="addEq" type="button">+ เพิ่มอุปกรณ์</button>
     </section>
   </div>
+</div>
 </div>
 
 <!-- ===== booking detail sheet ===== -->
@@ -1513,10 +1562,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     b.hidden = !msg; b.textContent = msg;
   }
   function showMe(who){
-    $('#meImg').hidden = true;
     $('#meName').textContent = who.name || 'ผู้ใช้';
+    $('#meAv').textContent = ((who.name || 'ผู้ใช้').trim().charAt(0) || '?').toUpperCase();
+    $('#meUnit').textContent = (typeof profile === 'object' && profile && profile.unit) || (canEdit ? 'ผู้ดูแลระบบ' : '');
     $('#meRole').textContent = canEdit ? 'ผู้ดูแล' : 'ผู้จอง';
-    $('#meRole').hidden = false; $('#meEdit').hidden = local || auth !== 'in'; $('#exitDemo').hidden = false; $('#exitDemo').textContent = 'ออกจากระบบ';
+    $('#meRole').hidden = true; $('#meEdit').hidden = local || auth !== 'in'; $('#exitDemo').hidden = false; $('#exitDemo').textContent = 'ออกจากระบบ';
   }
   function renderLogin(){
     var chk = auth === 'checking';
@@ -1532,12 +1582,13 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin';
     $('#viewMain').classList.toggle('guest', viewOnly); $('.side').hidden = viewOnly;
     $('#dateNav').hidden = gate || view !== 'main';
-    $('#goAdmin').hidden = gate || !(canEdit && view === 'main'); $('#goMain').hidden = gate || view !== 'admin';
+    $('#goAdmin').hidden = gate || !canEdit || view === 'admin'; $('#goMain').hidden = gate || view !== 'admin';
+    document.body.classList.toggle('inadmin', view === 'admin');
     $('#goLogin').hidden = !guest;
     if(view === 'admin' && !gate && lastView !== 'admin') loadUsers();
     lastView = view;
     $('#meChip').hidden = gate || guest;
-    $('#pageTitle').textContent = gate ? 'เข้าสู่ระบบ' : (view === 'admin' ? 'หน้าผู้ดูแล' : 'ระบบจองห้องประชุม');
+    $('#pageTitle').textContent = gate ? 'เข้าสู่ระบบ' : 'ระบบจองห้องประชุม';
     render();
   }
   function render(){
@@ -1573,8 +1624,13 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
   $('#next').addEventListener('click', function(){ date = shiftView(1); $('#f-date').value = date; render(); });
   $('#today').addEventListener('click', function(){ date = todayStr(); $('#f-date').value = date; render(); });
   $('#vdate').addEventListener('change', function(){ if($('#vdate').value){ date = $('#vdate').value; $('#f-date').value = date; render(); } });
-  [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).addEventListener('click', function(){ vmode = m[1]; render(); }); });
-  window.addEventListener('hashchange', route);
+  [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).addEventListener('click', function(){ vmode = m[1]; if(view === 'admin'){ location.hash = '#main'; } else render(); closeNav(); }); });
+  window.addEventListener('hashchange', function(){ closeNav(); route(); });
+  function closeNav(){ document.body.classList.remove('navopen'); $('#navBtn').setAttribute('aria-expanded','false'); }
+  $('#navBtn').addEventListener('click', function(){ var o = document.body.classList.toggle('navopen'); this.setAttribute('aria-expanded', o ? 'true' : 'false'); });
+  $('#nvbd').addEventListener('click', closeNav);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNav(); });
+  $('#sidenav').addEventListener('click', function(e){ if(e.target.closest('a.sitem, #meEdit, #goLogin')) closeNav(); });
   document.querySelector('a.brand').addEventListener('click', function(){ if(!gated()){ roomFilter = ''; goDay(todayStr()); } }); /* logo/title: back to today's booking page */
 
   /* ---------- start ---------- */
