@@ -171,6 +171,16 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .board{display:flex;flex-direction:column;gap:12px}
 .card.stack{display:flex;flex-direction:column;gap:12px}
 .board-head h2#dayTitle{flex:1 1 100%;text-align:center}
+.board-head h2#dayTitle{display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.15;font-weight:500}
+.dt-k{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-body);font-size:14px;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+.dt-tag{font-size:11.5px;letter-spacing:0;padding:0 8px}
+.dt-main{display:inline-flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:0 10px}
+.dt-n{font-size:40px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.dt-m{font-size:24px}.dt-m.big{font-size:34px}
+.dt-s{font-size:24px;color:var(--muted)}
+.dt-y{font-size:18px;color:var(--muted);font-family:var(--f-body);font-weight:500}
+@media (max-width:640px){.dt-n{font-size:32px}.dt-m{font-size:20px}.dt-m.big{font-size:28px}.dt-s{font-size:20px}.dt-y{font-size:15px}}
+
 .board-head,.card-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
 .sw{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:5px;border:1px solid var(--line)}
@@ -925,6 +935,30 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
       return 'สัปดาห์ ' + a.getDate() + (a.getMonth() !== b.getMonth() ? ' ' + THM[a.getMonth()] : '') + ' – ' + b.getDate() + ' ' + THM[b.getMonth()] + ' พ.ศ. ' + (b.getFullYear() + 543); }
     if(vmode === 'month'){ var d = parse(date); return 'เดือน' + THM[d.getMonth()] + ' พ.ศ. ' + (d.getFullYear() + 543); }
     return thDate(date);
+  }
+  /* heading above the timetable: small label, big day number, month, year */
+  function renderTitle(){
+    var h = $('#dayTitle'); h.innerHTML = '';
+    function seg(cls, t){ var e = el('span', cls, t); return e; }
+    var main = el('span','dt-main'), eyebrow, tag = '';
+    if(vmode === 'week'){
+      var r = rangeOf(), a = parse(r[0]), b = parse(r[1]);
+      eyebrow = 'รายสัปดาห์';
+      main.appendChild(seg('dt-n', String(a.getDate()))); if(a.getMonth() !== b.getMonth()) main.appendChild(seg('dt-m', THM[a.getMonth()]));
+      main.appendChild(seg('dt-s', '–')); main.appendChild(seg('dt-n', String(b.getDate()))); main.appendChild(seg('dt-m', THM[b.getMonth()]));
+      main.appendChild(seg('dt-y', 'พ.ศ. ' + (b.getFullYear() + 543)));
+      if(r[0] <= todayStr() && todayStr() <= r[1]) tag = 'สัปดาห์นี้';
+    } else if(vmode === 'month'){
+      var d = parse(date); eyebrow = 'รายเดือน';
+      main.appendChild(seg('dt-m big', THM[d.getMonth()])); main.appendChild(seg('dt-y', 'พ.ศ. ' + (d.getFullYear() + 543)));
+      if(date.slice(0,7) === todayStr().slice(0,7)) tag = 'เดือนนี้';
+    } else {
+      var x = parse(date); eyebrow = 'วัน' + DAYF[x.getDay()];
+      main.appendChild(seg('dt-n', String(x.getDate()))); main.appendChild(seg('dt-m', THM[x.getMonth()])); main.appendChild(seg('dt-y', 'พ.ศ. ' + (x.getFullYear() + 543)));
+      if(date === todayStr()) tag = 'วันนี้';
+    }
+    var top = el('span','dt-k'); top.appendChild(document.createTextNode(eyebrow)); if(tag) top.appendChild(el('span','chip approved dt-tag', tag));
+    h.appendChild(top); h.appendChild(main);
   }
   function roomShort(b){
     var r = bOf(b.building).rooms.filter(function(x){ return x.id === b.room; })[0], nm = (r && r.name) || b.roomName || b.room;
@@ -1687,7 +1721,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
     var pc = pendingCount();
     renderBanner();
     if(view === 'admin'){ closeDetail(true); if(!dirty) renderCfg(); return; }
-    $('#dayTitle').textContent = viewTitle();
+    renderTitle();
     $('#vdate').value = date;
     var dm = vmode === 'day';
     $('#viewMain').classList.toggle('wide', !dm);
