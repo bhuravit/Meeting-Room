@@ -1585,9 +1585,9 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
         rows.push({label:TH_M[m], n:l.length, h:l.reduce(function(a,b){ return a + (b.end - b.start); }, 0) / 2}); }
       body.appendChild(rpTable('แยกตามเดือน', rows, 'รายการ'));
     } /* monthly report: no per-day breakdown */
-    function sortDesc(a){ return a.sort(function(x,y){ return y.n - x.n; }); }
+    function sortDesc(a){ return a.sort(function(x,y){ return y.n - x.n || y.h - x.h || String(x.label).localeCompare(String(y.label), 'th'); }); }
     var roomRows = tally(ap, function(b){ return [(b.buildingShort || 'ไม่ระบุอาคาร') + '\u0001' + (b.roomName || b.room)]; }).map(function(x){ var k = x.label.split('\u0001'); return {sub:k[0], label:k[1], n:x.n, h:x.h}; });
-    roomRows.sort(function(a,b){ return a.sub.localeCompare(b.sub, 'th') || b.n - a.n; });
+    sortDesc(roomRows); /* most bookings first; equal counts: more hours first */
     body.appendChild(rpTable('แยกตามห้อง', roomRows, 'รายการ', ['อาคาร','ห้อง']));
     body.appendChild(rpTable('แยกตามหน่วยงาน', sortDesc(tally(ap, function(b){ return [b.unit || 'ไม่ระบุ']; })), 'รายการ'));
   }
