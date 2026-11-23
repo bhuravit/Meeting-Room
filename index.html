@@ -260,6 +260,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
 .tt{display:grid;grid-template-columns:50px repeat(var(--cols,3),minmax(0,1fr));grid-template-rows:auto repeat(27,24px) 22px;border:1px solid var(--line);border-top:4px solid var(--tb,var(--line));width:100%;min-width:0;box-sizing:border-box}@media (max-width:640px){.tt{grid-template-columns:40px repeat(var(--cols,3),minmax(0,1fr))}.tl{padding:0 2px;font-size:10px}.hd{padding:4px 2px;font-size:10.5px;line-height:1.25}.hd.t{font-size:10px}.hd small{font-size:9px}.tt .bk{margin:1px;padding:2px 3px;font-size:10px;line-height:1.25;overflow:hidden}.tt .bk span:nth-of-type(n+2){display:none}}
 .hd{grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;padding:10px 8px;font-size:17px;line-height:1.35;overflow-wrap:anywhere;font-weight:600;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 20%,var(--surface));border-left:1px solid var(--line)}
 .hd small{font-weight:400;font-size:11px;color:var(--muted)}
+.hd small.seats{font-size:13px;font-weight:300;color:var(--muted);white-space:nowrap}
 @media (max-width:900px){.hd{font-size:15px;padding:8px 4px}}
 @media (max-width:560px){.hd{font-size:13px}}
 .hd.t{grid-column:1;border-left:0;font-size:13px;color:var(--muted)}
@@ -914,7 +915,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     var h0 = el('div','hd t','เวลา'); h0.style.gridRow = '1'; g.appendChild(h0);
     rooms.forEach(function(r,i){
       var h = el('div','hd'); h.style.gridColumn = String(i+2);
-      h.appendChild(el('span',null,r.name + (r.seats ? ' (' + r.seats + ' ที่นั่ง)' : '')));
+      var hn = el('span',null,r.name); if(r.seats) hn.appendChild(el('small','seats',' (' + r.seats + ' ที่นั่ง)')); h.appendChild(hn);
       if(isClosed(r, date)){ h.appendChild(el('em','closedtag','ปิดปรับปรุง')); if(r.closedTo) h.appendChild(el('small',null,'พร้อมใช้ ' + parse(shift(r.closedTo,1)).getDate() + ' ' + THM[parse(shift(r.closedTo,1)).getMonth()])); h.classList.add('isclosed'); }
       g.appendChild(h);
     });
