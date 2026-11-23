@@ -104,7 +104,7 @@
 .app{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh;align-items:start}
 .sidenav{position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--line);padding:0}
 .sidenav .brand{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;gap:8px;padding:18px 18px 16px;border-bottom:1px solid var(--line);background:transparent!important;border-radius:0!important;box-shadow:none!important}
-.sidenav .logo{height:46px;padding:0;border-radius:0}.sidenav .brand h1{font-size:19px;font-weight:500;line-height:1.25}.sidenav .brand small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.sidenav .logo{height:auto;width:168px;max-width:100%;padding:0;border-radius:0}.sidenav .brand h1{font-size:19px;font-weight:500;line-height:1.25}.sidenav .brand small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
 body:not(.gated) .sidenav .brand h1{color:var(--ink)}
 body:not(.gated) .sidenav .brand{padding:18px 18px 16px}
 .snav{display:flex;flex-direction:column;gap:2px;padding:14px 12px;flex:1}
@@ -134,7 +134,7 @@ body.gated .app{display:block;min-height:0}
 body.gated .sidenav{position:static;height:auto;background:transparent;border:0}
 body.gated .sidenav .snav,body.gated .sidenav .suser{display:none}
 body.gated .sidenav .brand{align-items:center;border:0;padding:20px 16px 0}
-body.gated .sidenav .logo{height:56px}
+body.gated .sidenav .logo{height:auto;width:230px}
 @media (max-width:900px){.app{display:block}
 .mbar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:30;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--line)}
 body.gated .mbar{display:none}
@@ -366,7 +366,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
   <div class="mbar"><button class="nvbtn ic-menu" id="navBtn" type="button" aria-label="เปิดเมนู" aria-expanded="false" aria-controls="sidenav"></button><b>ระบบจองห้องประชุม</b></div>
   <aside class="sidenav" id="sidenav" aria-label="เมนูหลัก">
     <a class="brand" href="#main" aria-label="กลับหน้าแรกการจอง" title="กลับหน้าแรกการจอง">
-      <img class="logo" src="logo.png" alt="โลโก้สถาบันพระบรมราชชนก สภากาชาดไทย ศรีสวรินทิรา" width="154" height="65">
+      <img class="logo" src="logo.png" alt="โลโก้สถาบันพระบรมราชชนก สภากาชาดไทย ศรีสวรินทิรา" width="720" height="398">
       <span><h1 id="pageTitle">ระบบจองห้องประชุม</h1><small>สถาบันการพยาบาลศรีสวรินทิรา</small></span>
     </a>
     <nav class="snav" aria-label="เมนู">
