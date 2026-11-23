@@ -1590,7 +1590,6 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     roomRows.sort(function(a,b){ return a.sub.localeCompare(b.sub, 'th') || b.n - a.n; });
     body.appendChild(rpTable('แยกตามห้อง', roomRows, 'รายการ', ['อาคาร','ห้อง']));
     body.appendChild(rpTable('แยกตามหน่วยงาน', sortDesc(tally(ap, function(b){ return [b.unit || 'ไม่ระบุ']; })), 'รายการ'));
-    body.appendChild(rpTable('แยกตามผู้จอง', sortDesc(tally(ap, function(b){ return [b.name || 'ไม่ระบุ']; })).slice(0,10), 'รายการ'));
   }
   function csvCell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
   $('#rpCsv').addEventListener('click', function(){
