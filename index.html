@@ -68,6 +68,38 @@
 #doLogin.btn{min-height:46px;padding:0 26px}
 #goLogin.sitem:hover,#doLogin.btn:hover{background:#B03430;color:#fff}
 #goLogin.sitem:active,#doLogin.btn:active{transform:translateY(1px);box-shadow:0 4px 10px rgba(193,60,56,.3)}
+.ic-search{--ic:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%227%22/%3E%3Cpath d=%22M21 21l-4.3-4.3%22/%3E%3C/svg%3E")}
+/* ---- search page ---- */
+.sform{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:16px 18px;border-radius:14px}
+.sform .sf{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--muted);white-space:nowrap}
+.sform .sf input,.sform .sf select{height:42px;border-radius:10px;font-size:15px;font-weight:500;color:var(--ink);width:auto;min-width:0}
+.sform #sr-q{width:min(100%,300px)}
+.sform .sbtn{min-height:42px;padding:0 22px;border-radius:10px;font-weight:600}
+.sform .sbtn.go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sform .shint{flex:1 1 100%;margin:2px 0 0;font-size:13px;color:var(--muted)}
+.sres{margin-top:14px;border-radius:14px;padding:18px}
+.sres-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:12px}
+.sres-h h2{font-size:19px;font-weight:600}
+.scount{font-size:13px;font-weight:600;padding:2px 12px;border-radius:99px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent)}
+.stbl{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14.5px}
+.stbl th{background:var(--off-bg);color:var(--muted);font-weight:600;font-size:13.5px;text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.stbl td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45;overflow-wrap:anywhere}
+.stbl tr:last-child td{border-bottom:0}
+.stbl tbody tr:hover td{background:var(--hover)}
+.stbl .no{text-align:center;color:var(--muted);width:48px}
+.stbl .dt{white-space:nowrap}.stbl .dt b{display:block;color:var(--accent);font-weight:600}.stbl .dt span{color:var(--muted);font-size:13.5px}
+.stbl .tt1{font-weight:600}
+.stbl .st{white-space:nowrap}
+.stbl .lnk{border:0;background:none;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;padding:0 0 0 8px}.stbl .lnk:hover{text-decoration:underline}
+.sempty{padding:26px 0;text-align:center;color:var(--muted)}
+@media (max-width:860px){
+.stbl,.stbl tbody,.stbl tr,.stbl td{display:block;width:100%}.stbl{border:0}.stbl thead{display:none}
+.stbl tr{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:6px 10px}
+.stbl td{border:0;padding:4px 0;display:flex;gap:10px}.stbl td::before{content:attr(data-l);flex:0 0 92px;font-size:12.5px;color:var(--muted);font-weight:600}
+.stbl td.no{text-align:left;width:100%}.stbl .dt b{display:inline;margin-right:8px}.stbl .dt{white-space:normal}
+.stbl td>div{min-width:0}
+.sform .sf{flex:1 1 100%;flex-wrap:wrap}.sform #sr-q{flex:1}}
+@media print{.sidenav,.mbar,.nvbd,.notice,.sform,#toast,.stbl .act{display:none!important}.app{display:block}.wrap{padding:0;max-width:none}.sres{border:0;padding:0}body{background:#fff}}
 /* ---- side navigation ---- */
 .app{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh;align-items:start}
 .sidenav{position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--line);padding:0}
@@ -334,6 +366,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
       <button type="button" class="sitem ic-week" id="vmWeek" aria-pressed="false">รายสัปดาห์</button>
       <button type="button" class="sitem ic-month" id="vmMonth" aria-pressed="false">รายเดือน</button>
       <div class="ssec">เมนู</div>
+      <a class="sitem ic-search" id="goSearch" href="#search">ค้นหา</a>
       <a class="sitem ic-admin" id="goAdmin" href="#admin" hidden>หน้าผู้ดูแล</a>
       <a class="sitem ic-back" id="goMain" href="#main" hidden>กลับหน้าจอง</a>
       <button class="sitem ic-in" id="goLogin" type="button" hidden>เข้าสู่ระบบ</button>
@@ -365,6 +398,19 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
       </div>
     </form>
   </section>
+
+  <!-- ===== search page ===== -->
+  <div id="viewSearch" hidden>
+    <form class="sform card" id="srForm" novalidate>
+      <label class="sf">คำค้นหา<input id="sr-q" type="search" placeholder="หัวข้อหรือรายละเอียดการจอง" autocomplete="off"></label>
+      <span class="sf">ตั้งแต่วันที่<select id="sr-fd" aria-label="วันที่เริ่มต้น"></select><select id="sr-fm" aria-label="เดือนที่เริ่มต้น"></select><select id="sr-fy" aria-label="ปีที่เริ่มต้น (พ.ศ.)"></select></span>
+      <span class="sf">ถึงวันที่<select id="sr-td" aria-label="วันที่สิ้นสุด"></select><select id="sr-tm" aria-label="เดือนที่สิ้นสุด"></select><select id="sr-ty" aria-label="ปีที่สิ้นสุด (พ.ศ.)"></select></span>
+      <button class="btn sbtn go" type="submit">ค้นหา</button>
+      <button class="btn sbtn" id="srPrint" type="button">พิมพ์</button>
+      <p class="shint">ระบุคำค้นหา: ค้นจากหัวข้อ รายละเอียด และชื่อผู้จอง ในทุกช่วงวันที่ · ไม่ระบุคำค้นหา: แสดงการจองทั้งหมดในช่วงวันที่ที่เลือก</p>
+    </form>
+    <section class="card sres" aria-live="polite"><div id="srBody"></div></section>
+  </div>
 
   <!-- ===== booking page ===== -->
   <div class="layout" id="viewMain">
@@ -1681,16 +1727,79 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     $('#loginForm').hidden = chk;
     $('#backGuest').hidden = chk || !sb;
   }
+  /* ---------- search page ---------- */
+  var THS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var srInited = false, srRan = false, srLast = null;
+  function srFill(p){
+    var d = $('#sr-'+p+'d'), m = $('#sr-'+p+'m'), y = $('#sr-'+p+'y'), cy = new Date().getFullYear(), i;
+    for(i = 1; i <= 31; i++) d.appendChild(el('option', null, String(i))).value = i;
+    for(i = 0; i < 12; i++) m.appendChild(el('option', null, THM[i])).value = i + 1;
+    for(i = cy - 4; i <= cy + 2; i++) y.appendChild(el('option', null, String(i + 543))).value = i;
+  }
+  function srSet(p, iso){ var q = iso.split('-'); $('#sr-'+p+'y').value = +q[0]; $('#sr-'+p+'m').value = +q[1]; $('#sr-'+p+'d').value = +q[2]; }
+  function srGet(p){
+    var y = +$('#sr-'+p+'y').value, m = +$('#sr-'+p+'m').value, d = Math.min(+$('#sr-'+p+'d').value, new Date(y, m, 0).getDate());
+    return y + '-' + pad(m) + '-' + pad(d);
+  }
+  function srInit(){
+    if(srInited) return; srInited = true;
+    ['f','t'].forEach(srFill);
+    var t = todayStr(); srSet('t', t); srSet('f', shift(t, -6));
+    $('#srForm').addEventListener('submit', function(ev){ ev.preventDefault(); srRan = true; renderSearch(); });
+    $('#srPrint').addEventListener('click', function(){ if(!srRan){ srRan = true; renderSearch(); } window.print(); });
+  }
+  function thShort(d){ var x = parse(d); return WD[x.getDay()] + ' ' + x.getDate() + ' ' + THS[x.getMonth()] + ' ' + (x.getFullYear() + 543); }
+  function thLong(d){ var x = parse(d); return x.getDate() + ' ' + THM[x.getMonth()] + ' ' + (x.getFullYear() + 543); }
+  function renderSearch(){
+    srInit();
+    var body = $('#srBody'); body.innerHTML = '';
+    if(!srRan && (all.length || loaded)){ srRan = true; }
+    if(!srRan){ body.appendChild(el('p','sempty','กำลังโหลดข้อมูล…')); return; }
+    var q = $('#sr-q').value.trim().toLowerCase(), f = srGet('f'), t = srGet('t');
+    if(f > t){ var sw = f; f = t; t = sw; }
+    var rows = all.filter(function(b){
+      if(q) return [b.title, b.note, b.name].join('\n').toLowerCase().indexOf(q) >= 0;
+      return b.date >= f && b.date <= t;
+    }).sort(function(a,b){ return a.date.localeCompare(b.date) || a.start - b.start; });
+    var h = el('div','sres-h');
+    h.appendChild(el('h2', null, q ? 'ผลการค้นหา “' + $('#sr-q').value.trim() + '” ในทุกช่วงวันที่' : 'การจองห้องประชุม ระหว่างวันที่ ' + thLong(f) + ' ถึงวันที่ ' + thLong(t)));
+    h.appendChild(el('span','scount','พบ ' + rows.length + ' รายการ'));
+    body.appendChild(h);
+    if(!rows.length){ body.appendChild(el('p','sempty','ไม่พบรายการจองตามเงื่อนไขที่เลือก')); return; }
+    var tb = el('table','stbl'), th = el('thead'), hr = el('tr');
+    ['ลำดับ','วันเวลาประชุม','หัวข้อการประชุม','ชื่อห้องประชุม','ผู้ขอห้องประชุม','รายละเอียดการจองห้องประชุม','สถานะ'].forEach(function(c){ hr.appendChild(el('th', null, c)); });
+    th.appendChild(hr); tb.appendChild(th);
+    var tbd = el('tbody');
+    var SL = {approved:'อนุมัติแล้ว', pending:'รอการอนุมัติ', rejected:'ไม่อนุมัติ', cancelled:'ยกเลิก'};
+    rows.forEach(function(b, i){
+      var tr = el('tr');
+      function td(cls, label, content){ var c = el('td', cls); c.setAttribute('data-l', label); if(typeof content === 'string') c.textContent = content; else { var w = el('div'); w.appendChild(content); c.appendChild(w); } tr.appendChild(c); return c; }
+      td('no', 'ลำดับ', String(i + 1));
+      var dt = el('div'); dt.appendChild(el('b', null, thShort(b.date))); dt.appendChild(el('span', null, tl(b.start) + ' – ' + tl(b.end) + ' น.'));
+      td('dt', 'วันเวลา', dt);
+      td('tt1', 'หัวข้อ', b.title || '-');
+      var bl = findB(b.building); td('', 'ห้อง', (bl ? bl.name : (b.buildingShort || '')) + ' - ' + roomShort(b));
+      td('', 'ผู้ขอ', b.name || '-');
+      td('', 'รายละเอียด', b.note || '');
+      var sc = td('st act', 'สถานะ', el('span','chip ' + b.status, '● ' + (SL[b.status] || b.status)));
+      var lk = el('button','lnk','ดูรายละเอียด'); lk.type = 'button'; lk.addEventListener('click', function(){ openDetail(b.id); });
+      sc.firstChild.appendChild(lk);
+      tbd.appendChild(tr);
+    });
+    tb.appendChild(tbd); body.appendChild(tb);
+  }
+
   function route(){
     var gate = gated(), guest = auth === 'guest', viewOnly = guest; /* guests see the timetable only; signed-in users (admins included) can book */
-    view = (!gate && location.hash === '#admin' && canEdit) ? 'admin' : 'main';
+    view = (!gate && location.hash === '#admin' && canEdit) ? 'admin' : (!gate && location.hash === '#search') ? 'search' : 'main';
     document.body.classList.toggle('gated', gate);
     $('#viewLogin').hidden = !gate;
-    $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin';
+    $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin'; $('#viewSearch').hidden = gate || view !== 'search';
     $('#viewMain').classList.toggle('guest', viewOnly); $('.side').hidden = viewOnly;
     $('#dateNav').hidden = gate || view !== 'main';
-    $('#goAdmin').hidden = gate || !canEdit || view === 'admin'; $('#goMain').hidden = gate || view !== 'admin';
-    document.body.classList.toggle('inadmin', view === 'admin');
+    $('#goAdmin').hidden = gate || !canEdit || view === 'admin'; $('#goMain').hidden = gate || view === 'main';
+    $('#goSearch').hidden = gate; $('#goSearch').setAttribute('aria-current', view === 'search' ? 'page' : 'false');
+    document.body.classList.toggle('inadmin', view !== 'main');
     $('#goLogin').hidden = !guest;
     if(view === 'admin' && !gate && lastView !== 'admin') loadUsers();
     lastView = view;
@@ -1704,6 +1813,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     var pc = pendingCount();
     renderBanner();
     if(view === 'admin'){ closeDetail(true); if(!dirty) renderCfg(); return; }
+    if(view === 'search'){ renderSearch(); renderDetail(); return; }
     renderTitle();
     $('#vdate').value = date;
     var dm = vmode === 'day';
@@ -1733,7 +1843,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
   $('#next').addEventListener('click', function(){ date = shiftView(1); $('#f-date').value = date; render(); });
   $('#today').addEventListener('click', function(){ date = todayStr(); $('#f-date').value = date; render(); });
   $('#vdate').addEventListener('change', function(){ if($('#vdate').value){ date = $('#vdate').value; $('#f-date').value = date; render(); } });
-  [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).addEventListener('click', function(){ vmode = m[1]; if(view === 'admin'){ location.hash = '#main'; } else render(); closeNav(); }); });
+  [['Day','day'],['Week','week'],['Month','month']].forEach(function(m){ $('#vm' + m[0]).addEventListener('click', function(){ vmode = m[1]; if(view !== 'main'){ location.hash = '#main'; } else render(); closeNav(); }); });
   window.addEventListener('hashchange', function(){ closeNav(); route(); });
   function closeNav(){ document.body.classList.remove('navopen'); $('#navBtn').setAttribute('aria-expanded','false'); }
   $('#navBtn').addEventListener('click', function(){ var o = document.body.classList.toggle('navopen'); this.setAttribute('aria-expanded', o ? 'true' : 'false'); });
