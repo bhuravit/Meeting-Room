@@ -1741,10 +1741,13 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     var y = +$('#sr-'+p+'y').value, m = +$('#sr-'+p+'m').value, d = Math.min(+$('#sr-'+p+'d').value, new Date(y, m, 0).getDate());
     return y + '-' + pad(m) + '-' + pad(d);
   }
+  /* every visit to the search page starts clean: no keyword, from = to = today */
+  function srReset(){ var t = todayStr(); $('#sr-q').value = ''; srSet('t', t); srSet('f', t); srRan = false; }
+  var srWas = false;
   function srInit(){
     if(srInited) return; srInited = true;
     ['f','t'].forEach(srFill);
-    var t = todayStr(); srSet('t', t); srSet('f', shift(t, -6));
+    srReset();
     $('#srForm').addEventListener('submit', function(ev){ ev.preventDefault(); srRan = true; renderSearch(); });
     $('#srPrint').addEventListener('click', function(){ if(!srRan){ srRan = true; renderSearch(); } window.print(); });
   }
@@ -1792,6 +1795,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
   function route(){
     var gate = gated(), guest = auth === 'guest', viewOnly = guest; /* guests see the timetable only; signed-in users (admins included) can book */
     view = (!gate && location.hash === '#admin' && canEdit) ? 'admin' : (!gate && location.hash === '#search') ? 'search' : 'main';
+    if(view !== 'search') srWas = false;
     document.body.classList.toggle('gated', gate);
     $('#viewLogin').hidden = !gate;
     $('#viewMain').hidden = gate || view !== 'main'; $('#viewAdmin').hidden = gate || view !== 'admin'; $('#viewSearch').hidden = gate || view !== 'search';
@@ -1813,7 +1817,8 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     var pc = pendingCount();
     renderBanner();
     if(view === 'admin'){ closeDetail(true); if(!dirty) renderCfg(); return; }
-    if(view === 'search'){ renderSearch(); renderDetail(); return; }
+    if(view === 'search'){ if(!srWas){ srInit(); srReset(); srWas = true; } renderSearch(); renderDetail(); return; }
+    srWas = false;
     renderTitle();
     $('#vdate').value = date;
     var dm = vmode === 'day';
