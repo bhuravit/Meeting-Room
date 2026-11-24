@@ -921,11 +921,11 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
           var c = el('button','rbtn', label); c.type = 'button'; c.setAttribute('aria-pressed', val === cur ? 'true' : 'false');
           c.addEventListener('click', function(){
             if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); }
-            roomFilter = val; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render();
+            roomFilter = (vmode === 'week' && val && val === cur) ? '' : val; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render();
           });
           lb.appendChild(c);
         }
-        chipBtn('ทุกห้อง', '');
+        if(vmode !== 'week') chipBtn('ทุกห้อง', ''); /* week view: click the selected room again to show all rooms */
         b.rooms.forEach(function(r){ chipBtn(r.name, b.id + '|' + r.id); });
         col.appendChild(lb);
       }
