@@ -276,7 +276,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
 .tab{border-left:5px solid color-mix(in srgb,var(--tb,var(--accent)) 60%,#000)}
 .tab[aria-selected="true"]{background:var(--tb,var(--accent));border-color:var(--tb,var(--accent));color:var(--tf,var(--accent-ink));font-weight:600}
 .tab small{display:block;font-size:11px;opacity:.85;font-weight:400}
-.tt{display:grid;grid-template-columns:96px repeat(var(--cols,3),minmax(0,1fr));grid-template-rows:auto repeat(27,24px) 22px;border:1px solid var(--line);border-top:4px solid color-mix(in srgb,var(--tb,var(--line)) 60%,#000);width:100%;min-width:0;box-sizing:border-box}@media (max-width:760px){.tt{grid-template-columns:40px repeat(var(--cols,3),minmax(0,1fr))}.tl{padding:0 2px;font-size:10px}.hd{padding:4px 2px;font-size:10.5px;line-height:1.25}.hd.t{font-size:10px}.hd small{font-size:9px}.tt .bk{margin:1px;padding:2px 3px;font-size:10px;line-height:1.25;overflow:hidden}.tt .bk span:nth-of-type(n+2){display:none}}
+.tt{display:grid;grid-template-columns:96px repeat(var(--cols,3),minmax(0,1fr));grid-template-rows:auto repeat(27,24px);border:1px solid var(--line);border-top:4px solid color-mix(in srgb,var(--tb,var(--line)) 60%,#000);width:100%;min-width:0;box-sizing:border-box}@media (max-width:760px){.tt{grid-template-columns:40px repeat(var(--cols,3),minmax(0,1fr))}.tl{padding:0 2px;font-size:10px}.hd{padding:4px 2px;font-size:10.5px;line-height:1.25}.hd.t{font-size:10px}.hd small{font-size:9px}.tt .bk{margin:1px;padding:2px 3px;font-size:10px;line-height:1.25;overflow:hidden}.tt .bk span:nth-of-type(n+2){display:none}}
 .hd{grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;padding:10px 8px;font-size:17px;line-height:1.35;overflow-wrap:anywhere;font-weight:600;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 45%,var(--surface));border-left:1px solid var(--line)}
 .hd small{font-weight:400;font-size:11px;color:var(--muted)}
 .hd small.seats{font-size:13px;font-weight:300;color:var(--muted);white-space:nowrap}
@@ -980,16 +980,10 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
         g.appendChild(c);
       });
     }
-    var te = el('div','tl hr', tl(N)); te.style.gridRow = String(N+2); g.appendChild(te); /* closing line: end of day */
-    rooms.forEach(function(room,ci){ var armed = pickEnd && auth !== 'guest' && $('#f-bld').value === curB && $('#f-room').value === room.id && $('#f-date').value === date;
-      var ce = el(armed ? 'button' : 'div','cell hr end'+(armed?' armed':''));
-      if(armed){ ce.type = 'button'; ce.setAttribute('aria-label', room.name+' สิ้นสุด '+tl(N));
-        ce.addEventListener('click', function(){ $('#f-end').value = N; say(''); fitDraft(); pickEnd = false; draftOn = true; render(); $('#f-title').focus(); }); }
-      ce.style.gridColumn = String(ci+2); ce.style.gridRow = String(N+2); g.appendChild(ce); });
     day.forEach(function(b){
       var ci = rooms.map(function(r){ return r.id; }).indexOf(b.room); if(ci<0) return;
       var k = el('button','bk '+b.status+(selected===b.id?' sel':'')); k.type='button';
-      k.style.gridColumn = String(ci+2); k.style.gridRow = (b.start+2)+' / '+(b.end+2+(b.end>=N?1:0)); /* a booking that ends at closing time also fills the closing row */
+      k.style.gridColumn = String(ci+2); k.style.gridRow = (b.start+2)+' / '+(b.end+2);
       k.appendChild(el('b','bt',b.title));
       k.appendChild(el('span','btm',tl(b.start)+'–'+tl(b.end)));
       k.appendChild(el('span','chip bp '+b.status,'● '+(b.status==='approved' ? 'อนุมัติแล้ว' : 'รอการอนุมัติ')));
@@ -1006,7 +1000,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
       var ds = parseInt($('#f-start').value, 10), de = parseInt($('#f-end').value, 10);
       var dRoom = $('#f-room').value, dHit = day.some(function(x){ return x.room === dRoom && x.start < de && ds < x.end; });
       if($('#f-date').value === date && $('#f-bld').value === curB && dci >= 0 && ds >= 0 && de > ds && !dHit){
-        var du = $('#f-unit').value, dk = el('div','bk draft'); dk.style.gridColumn = String(dci+2); dk.style.gridRow = (ds+2)+' / '+(de+2+(de>=N?1:0));
+        var du = $('#f-unit').value, dk = el('div','bk draft'); dk.style.gridColumn = String(dci+2); dk.style.gridRow = (ds+2)+' / '+(de+2);
         dk.appendChild(el('b',null,tl(ds)+'–'+tl(de)));
         if(pickEnd) dk.appendChild(el('span',null,'▼ คลิกช่องสุดท้ายของการประชุม'));
         dk.appendChild(el('span',null,(du || 'เลือกหน่วยงานเพื่อกำหนดสี')));
