@@ -38,7 +38,7 @@
 .wh{padding:10px 6px;text-align:center;font-weight:600;font-size:14px;line-height:1.3;background:var(--off-bg);background:color-mix(in srgb,var(--tb,var(--off)) 45%,var(--surface));border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--ink);font-family:inherit;cursor:pointer;min-width:0}
 .wh.wt{border-left:0;cursor:default;color:var(--muted);font-weight:500}
 .wh:not(.wt):hover{background:var(--hover)}
-.wh.today{background:var(--accent);color:var(--accent-ink)}
+.wh.today{background:var(--dh,var(--accent));color:var(--dk,var(--accent-ink))}
 .wh .ds{display:none}.wh .dl{display:block}.wh .dd,.wh .dm{white-space:nowrap}.wh{font-size:13.5px}
 .wx{border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:3px;display:flex;flex-direction:column;gap:3px;min-width:0}.wx.wt{border-left:0}
 .wtc{display:flex;flex-direction:column;background:color-mix(in srgb,var(--off-bg) 60%,var(--surface))}
@@ -46,7 +46,7 @@
 .wl.hr{color:var(--ink)}.wl .wls{display:none}
 .wl.cur{background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent);font-weight:600}
 .wc{position:relative;height:calc(27*28px);border-left:1px solid var(--line);min-width:0;background:repeating-linear-gradient(to bottom,transparent 0 27px,var(--line) 27px 28px)}
-.wc.today{background-color:color-mix(in srgb,var(--accent) 5%,var(--surface))}
+.wc.today{background-color:var(--dt,color-mix(in srgb,var(--accent) 5%,var(--surface)))}
 .wb{position:absolute;z-index:1;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:6px 8px 6px 10px;text-align:left;font:inherit;font-size:13px;line-height:1.3;cursor:pointer;border:0;border-left:4px solid hsl(var(--h,0) 60% 55%);border-radius:3px;background:hsl(var(--h) var(--u-bgs) var(--u-bg));color:hsl(var(--h) var(--u-fgs) var(--u-fg))}
 .wb.nounit{background:var(--off-bg);color:var(--ink);border-left-color:var(--muted)}
 .wb:hover{filter:brightness(.97)}.wb.sel{outline:2px solid var(--accent);outline-offset:-1px}
@@ -1052,6 +1052,8 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
   }
   /* weekly time grid: one column per day, bookings drawn as blocks spanning their time, tinted by the booker's unit */
   var WROW = 28;
+  var DAYH = [355,48,330,135,25,205,270]; /* today's column tint by weekday: Sun red, Mon yellow, Tue pink, Wed green, Thu orange, Fri blue, Sat purple */
+  function dayTint(el_, dow){ el_.style.setProperty('--dh', 'hsl(' + DAYH[dow] + ' 72% 85%)'); el_.style.setProperty('--dk', 'hsl(' + DAYH[dow] + ' 45% 20%)'); el_.style.setProperty('--dt', 'hsl(' + DAYH[dow] + ' 85% 96%)'); }
   var DAYF = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   function buildWeek(r, list, today, closedTags){
     var wk = el('div','wk'); wk.style.setProperty('--tb', bcol(bOf(curB)).bg);
@@ -1062,6 +1064,7 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     var corner = el('div','wh wt','เวลา'); wk.appendChild(corner);
     days.forEach(function(d){
       var dd = parse(d), h = el('button','wh' + (d === today ? ' today' : '')); h.type = 'button'; h.title = 'ดูรายวัน ' + thDate(d);
+      if(d === today) dayTint(h, dd.getDay());
       h.appendChild(el('span','dl', DAYF[dd.getDay()])); h.appendChild(el('span','ds', WD[dd.getDay()]));
       h.appendChild(el('span','dd', ' ' + dd.getDate() + ' '));
       h.appendChild(el('span','dm', THM[dd.getMonth()]));
@@ -1080,7 +1083,8 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
     wk.appendChild(tc);
     /* day columns */
     days.forEach(function(d){
-      var col = el('div','wc' + (d === today ? ' today' : '')), items = (by[d] || []).slice().sort(function(a,b){ return a.start - b.start || a.end - b.end; });
+      var col = el('div','wc' + (d === today ? ' today' : '')); if(d === today) dayTint(col, parse(d).getDay());
+      var items = (by[d] || []).slice().sort(function(a,b){ return a.start - b.start || a.end - b.end; });
       /* lanes for overlapping bookings (different rooms at the same time) */
       var cluster = [], clEnd = -1, lanesEnd = [];
       function flush(){ var n = lanesEnd.length; cluster.forEach(function(x){ x.n = n; }); cluster = []; lanesEnd = []; clEnd = -1; }
