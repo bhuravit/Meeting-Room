@@ -916,16 +916,16 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
       var col = el('div','tcol'); col.appendChild(btn);
       if(vmode !== 'day'){
         var lb = el('div','rsel'); lb.setAttribute('role','group'); lb.setAttribute('aria-label','ห้องประชุมใน' + b.name); lb.style.setProperty('--tb', bcol(b).bg); lb.style.setProperty('--tf', bcol(b).fg);
-        var cur = roomFilter && roomFilter.split('|')[0] === b.id ? roomFilter : '';
+        var cur = roomFilter && roomFilter.split('|')[0] === b.id ? roomFilter : (vmode === 'week' && b.rooms.length ? b.id + '|' + b.rooms[0].id : ''); /* week view: first room of each building by default */
         function chipBtn(label, val){
           var c = el('button','rbtn', label); c.type = 'button'; c.setAttribute('aria-pressed', val === cur ? 'true' : 'false');
           c.addEventListener('click', function(){
             if(curB !== b.id){ $('#f-start').value = 4; $('#f-end').value = 5; draftOn = false; pickEnd = false; say(''); }
-            roomFilter = (vmode === 'week' && val && val === cur) ? '' : val; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render();
+            roomFilter = val; curB = b.id; $('#f-bld').value = b.id; syncRooms(); render();
           });
           lb.appendChild(c);
         }
-        if(vmode !== 'week') chipBtn('ทุกห้อง', ''); /* week view: click the selected room again to show all rooms */
+        if(vmode !== 'week') chipBtn('ทุกห้อง', ''); /* week view has no 'all rooms': one room at a time */
         b.rooms.forEach(function(r){ chipBtn(r.name, b.id + '|' + r.id); });
         col.appendChild(lb);
       }
@@ -1124,13 +1124,14 @@ label.bs.vd{margin-left:auto}label.bs.vd input{width:auto}
   function renderAlt(){
     var v = $('#altView'); v.innerHTML = '';
     var r = rangeOf(), today = todayStr();
+    var effRoom = roomFilter ? roomFilter.split('|')[1] : (vmode === 'week' && bOf(curB).rooms.length ? bOf(curB).rooms[0].id : '');
     var list = all.filter(function(b){ return b.building === curB && b.date >= r[0] && b.date <= r[1] && blocking(b); })
-                  .filter(function(b){ return !roomFilter || b.room === roomFilter.split('|')[1]; })
+                  .filter(function(b){ return !effRoom || b.room === effRoom; })
                   .sort(function(a,b){ return a.date.localeCompare(b.date) || a.start - b.start; });
     var by = {}; list.forEach(function(b){ (by[b.date] = by[b.date] || []).push(b); });
     function closedTags(c, d){
       bOf(curB).rooms.forEach(function(rm){
-        if(roomFilter && roomFilter.split('|')[1] !== rm.id) return;
+        if(effRoom && effRoom !== rm.id) return;
         if(isClosed(rm, d)) c.appendChild(el('div','cclosed', rm.name + ' · ปิดปรับปรุง'));
       });
     }
